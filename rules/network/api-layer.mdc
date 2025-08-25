@@ -1,0 +1,156 @@
+---
+description: Rules for implementing the API layer in React Native projects. Enforces configuration-driven endpoints, HTTP client setup, type safety, and error handling. All API-related code must reference the active project configuration for base URLs, endpoints, and environment settings. Ensures hooks, services, and models are segregated by resource.
+rule_type: [CODING_STANDARDS, CONFIG_DRIVEN, BEST_PRACTICES]
+globs:
+  - "**/api/**/*.ts"
+  - "**/api/**/*.tsx"
+alwaysApply: false
+---
+
+# API Layer Rules - Config-Driven and Segregated
+
+## Overview
+All API-related code must be implemented according to the active project configuration defined in `config/*.json`. Never hardcode API URLs, endpoints, or HTTP client configuration.  
+**Hooks, endpoints, services, and models must be organized by resource (e.g., Pet, User, Store) in their respective folders.**
+
+## Directory Structure
+
+- **API root:** Use the path specified in `config.fileStructure.api` (e.g., `src/api/`)
+- **Subdirectories:**
+  - `clients/` - HTTP client setup and environment switching
+  - `constants/` - API constants
+  - `endpoints/` - One file per API resource group (e.g., `PetEndpoints.ts`, `UserEndpoints.ts`)
+  - `hooks/` - One file per resource group (e.g., `PetHooks.ts`, `UserHooks.ts`)
+  - `services/` - One file per resource group (e.g., `PetService.ts`, `UserService.ts`)
+  - `models/` - TypeScript types/interfaces for request and response payloads, generated from `config.dataModels` (e.g., `Pet.ts`, `User.ts`)
+  - `utils/` - API utilities
+  - `index.ts` - Barrel exports for clean imports
+
+## HTTP Client
+
+- **Client selection:** Use the HTTP client specified in `config.architecture.httpClient` (e.g., `axios`)
+- **Configuration:**
+  - `baseURL`: Use the current environment's `apiBaseUrl` from `config.environments`
+  - `timeout`: 10,000 ms
+  - Default headers: `{ "Content-Type": "application/json" }`
+- **Interceptors:** Implement request/response interceptors for logging (if `debugMode` is enabled) and error handling
+
+## Endpoint Implementation
+
+- **Endpoint functions:** For each entry in `config.api.endpoints`, generate a typed function in the appropriate resource file under `endpoints/`
+- **Naming:** Use camelCase for API function names, grouped by resource
+- **JSDoc:** Include JSDoc comments for all API functions, describing parameters, responses, and errors
+
+## Hooks
+
+- **Organization:** Place resource-specific hooks in `hooks/` (e.g., `PetHooks.ts`, `OrderHooks.ts`)
+- **Content:** Each hook file should export hooks for fetching, mutating, and caching data for that resource
+
+## Services
+
+- **Organization:** Place resource-specific services in `services/` (e.g., `PetService.ts`, `OrderService.ts`)
+- **Content:** Each service file should encapsulate business logic and API calls for that resource
+
+## Models
+
+- **Organization:** Place resource-specific models in `models/` (e.g., `Pet.ts`, `Order.ts`)
+- **Content:** Each model file should contain TypeScript interfaces/types for that resource, generated from `config.dataModels`
+
+## Error Handling
+
+- **Global error handling:** Use interceptors for global error handling and retry logic for 5xx errors
+- **User-friendly errors:** Map API errors to user-friendly messages
+- **Logging:** Log errors according to the current environment's `logLevel`
+
+## API Documentation
+
+- **Reference:** Include the API documentation URL from `config.api.documentation` in file/module comments
+
+## Testing
+
+- **Test structure:** Mirror the API structure in `__tests__/api/`
+- **Mock data:** Use mock data based on types from `models/`
+- **Error scenarios:** Test error scenarios (400, 500 responses)
+- **Type validation:** Validate TypeScript interfaces against API responses
+
+## Feature and Permission Management
+
+- **Feature flags:** Only implement features listed in `config.features.enabled`
+- **Permissions:** Only request permissions listed in `config.features.permissions` if required for API calls
+
+## Import Organization
+
+- **Order:** External libraries first, then internal modules, then types
+- **Path resolution:** All imports must use paths defined in `config.fileStructure`
+
+## Example API Layer Structure
+
+```
+src/api/
+clients/
+ApiClient.ts
+constants/
+ApiConstants.ts
+endpoints/
+PetEndpoints.ts
+StoreEndpoints.ts
+UserEndpoints.ts
+hooks/
+PetHooks.ts
+StoreHooks.ts
+UserHooks.ts
+services/
+PetService.ts
+StoreService.ts
+UserService.ts
+models/
+Pet.ts
+Store.ts
+User.ts
+utils/
+ApiUtils.ts
+index.ts
+README.md
+```
+
+## Do's and Don'ts
+
+### ✅ DO's:
+- **Organize by resource** (Pet, User, Order, etc.)
+- **Use HTTP client** specified in `config.architecture.httpClient`
+- **Configure baseURL** from `config.environments`
+- **Implement interceptors** for logging and error handling
+- **Create typed functions** for all endpoints
+- **Add JSDoc comments** for all API functions
+- **Handle errors globally** with user-friendly messages
+- **Test error scenarios** (400, 500 responses)
+- **Use proper TypeScript** types for all API calls
+- **Implement retry logic** for failed requests
+- **Log errors** according to environment settings
+- **Validate API responses** against TypeScript interfaces
+- **Use proper authentication** headers when required
+- **Implement request caching** where appropriate
+
+### ❌ DON'Ts:
+- **Never hardcode** API URLs or endpoints
+- **Don't mix** different resources in same files
+- **Don't skip** error handling and retry logic
+- **Don't ignore** TypeScript types for API responses
+- **Don't forget** to log errors per environment
+- **Don't create** untyped API functions
+- **Don't skip** testing error scenarios
+- **Don't ignore** authentication requirements
+- **Don't forget** to handle network failures
+- **Don't create** monolithic API files
+- **Don't skip** response validation
+- **Don't ignore** performance considerations
+
+This ensures consistent, type-safe, and maintainable API layer implementation.
+
+User.ts
+utils/
+ApiUtils.ts
+index.ts
+README.md
+
+```

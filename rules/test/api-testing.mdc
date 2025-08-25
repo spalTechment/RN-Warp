@@ -1,0 +1,550 @@
+# API Testing Rule for React Native
+
+## Overview
+This rule defines comprehensive API testing standards for React Native applications. It covers HTTP client testing, service layer testing, API hooks testing, network error handling, and API integration testing.
+
+## Test Categories
+
+### 1. HTTP Client Tests
+- **Request Configuration**: Test HTTP method, headers, body, and URL construction
+- **Response Handling**: Test response parsing, status code handling, and data transformation
+- **Error Handling**: Test network errors, timeout handling, and error responses
+- **Authentication**: Test token management, authorization headers, and auth flows
+- **Interceptors**: Test request/response interceptors and middleware
+
+### 2. Service Layer Tests
+- **CRUD Operations**: Test create, read, update, delete operations
+- **Data Transformation**: Test API response to model transformation
+- **Validation**: Test input validation and request payload validation
+- **Error Mapping**: Test API error responses to application errors
+- **Retry Logic**: Test retry mechanisms and exponential backoff
+
+### 3. API Hooks Tests
+- **Data Fetching**: Test useQuery, useMutation, and custom API hooks
+- **Loading States**: Test loading state management and UI feedback
+- **Error States**: Test error handling and user feedback
+- **Cache Management**: Test data caching, invalidation, and updates
+- **Optimistic Updates**: Test optimistic UI updates and rollback
+
+### 4. Network Integration Tests
+- **API Endpoints**: Test all API endpoints and their responses
+- **Data Flow**: Test complete data flow from API to UI
+- **Offline Handling**: Test offline scenarios and error recovery
+- **Concurrent Requests**: Test multiple simultaneous API calls
+- **Request Cancellation**: Test request cancellation and cleanup
+
+## Test Structure Requirements
+
+### Required Imports
+```typescript
+import { renderHook, waitFor } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import axios from 'axios';
+import MockAdapter from 'axios-mock-adapter';
+```
+
+### Required Test Setup
+```typescript
+describe('APIService - API Testing', () => {
+  let mockAxios: MockAdapter;
+  let queryClient: QueryClient;
+
+  beforeEach(() => {
+    mockAxios = new MockAdapter(axios);
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+  });
+
+  afterEach(() => {
+    mockAxios.restore();
+    queryClient.clear();
+  });
+});
+```
+
+### Required Test Categories
+1. **HTTP Client Tests** (25% of test cases)
+2. **Service Layer Tests** (35% of test cases)
+3. **API Hooks Tests** (30% of test cases)
+4. **Network Integration Tests** (10% of test cases)
+
+## Test Patterns
+
+### HTTP Client Pattern
+```typescript
+describe('HTTP Client Tests', () => {
+  it('should make GET request with correct configuration', async () => {
+    const mockResponse = { data: { id: 1, name: 'Test' } };
+    mockAxios.onGet('/api/users/1').reply(200, mockResponse);
+
+    const response = await apiClient.get('/api/users/1');
+
+    expect(response.data).toEqual(mockResponse);
+    expect(mockAxios.history.get[0].url).toBe('/api/users/1');
+    expect(mockAxios.history.get[0].method).toBe('get');
+  });
+
+  it('should make POST request with correct payload', async () => {
+    const requestData = { name: 'New User', email: 'test@example.com' };
+    const mockResponse = { data: { id: 1, ...requestData } };
+    mockAxios.onPost('/api/users').reply(201, mockResponse);
+
+    const response = await apiClient.post('/api/users', requestData);
+
+    expect(response.data).toEqual(mockResponse);
+    expect(mockAxios.history.post[0].data).toBe(JSON.stringify(requestData));
+  });
+
+  it('should handle network errors', async () => {
+    mockAxios.onGet('/api/users').networkError();
+
+    await expect(apiClient.get('/api/users')).rejects.toThrow('Network Error');
+  });
+
+  it('should handle timeout errors', async () => {
+    mockAxios.onGet('/api/users').timeout();
+
+    await expect(apiClient.get('/api/users')).rejects.toThrow('timeout');
+  });
+
+  it('should include authentication headers', async () => {
+    const token = 'test-token';
+    apiClient.setAuthToken(token);
+    mockAxios.onGet('/api/protected').reply(200, { data: 'success' });
+
+    await apiClient.get('/api/protected');
+
+    expect(mockAxios.history.get[0].headers.Authorization).toBe(`Bearer ${token}`);
+  });
+});
+```
+
+### Service Layer Pattern
+```typescript
+describe('UserService Tests', () => {
+  it('should fetch user by ID', async () => {
+    const mockUser = { id: 1, name: 'John Doe', email: 'john@example.com' };
+    mockAxios.onGet('/api/users/1').reply(200, { data: mockUser });
+
+    const result = await UserService.getUserById(1);
+
+    expect(result).toEqual(mockUser);
+    expect(mockAxios.history.get[0].url).toBe('/api/users/1');
+  });
+
+  it('should create new user', async () => {
+    const userData = { name: 'Jane Doe', email: 'jane@example.com' };
+    const createdUser = { id: 2, ...userData };
+    mockAxios.onPost('/api/users').reply(201, { data: createdUser });
+
+    const result = await UserService.createUser(userData);
+
+    expect(result).toEqual(createdUser);
+    expect(mockAxios.history.post[0].data).toBe(JSON.stringify(userData));
+  });
+
+  it('should update user', async () => {
+    const updateData = { name: 'Updated Name' };
+    const updatedUser = { id: 1, name: 'Updated Name', email: 'john@example.com' };
+    mockAxios.onPut('/api/users/1').reply(200, { data: updatedUser });
+
+    const result = await UserService.updateUser(1, updateData);
+
+    expect(result).toEqual(updatedUser);
+    expect(mockAxios.history.put[0].data).toBe(JSON.stringify(updateData));
+  });
+
+  it('should delete user', async () => {
+    mockAxios.onDelete('/api/users/1').reply(204);
+
+    await UserService.deleteUser(1);
+
+    expect(mockAxios.history.delete[0].url).toBe('/api/users/1');
+  });
+
+  it('should handle API errors', async () => {
+    const errorResponse = { message: 'User not found', code: 'USER_NOT_FOUND' };
+    mockAxios.onGet('/api/users/999').reply(404, errorResponse);
+
+    await expect(UserService.getUserById(999)).rejects.toThrow('User not found');
+  });
+
+  it('should transform API response to model', async () => {
+    const apiResponse = {
+      user_id: 1,
+      user_name: 'John Doe',
+      user_email: 'john@example.com',
+      created_at: '2023-01-01T00:00:00Z'
+    };
+    const expectedModel = {
+      id: 1,
+      name: 'John Doe',
+      email: 'john@example.com',
+      createdAt: new Date('2023-01-01T00:00:00Z')
+    };
+    mockAxios.onGet('/api/users/1').reply(200, { data: apiResponse });
+
+    const result = await UserService.getUserById(1);
+
+    expect(result).toEqual(expectedModel);
+  });
+});
+```
+
+### API Hooks Pattern
+```typescript
+describe('useUsers Hook Tests', () => {
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
+  );
+
+  it('should fetch users successfully', async () => {
+    const mockUsers = [
+      { id: 1, name: 'User 1' },
+      { id: 2, name: 'User 2' }
+    ];
+    mockAxios.onGet('/api/users').reply(200, { data: mockUsers });
+
+    const { result } = renderHook(() => useUsers(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data).toEqual(mockUsers);
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  it('should handle loading state', () => {
+    mockAxios.onGet('/api/users').reply(() => new Promise(() => {}));
+
+    const { result } = renderHook(() => useUsers(), { wrapper });
+
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.data).toBeUndefined();
+  });
+
+  it('should handle error state', async () => {
+    mockAxios.onGet('/api/users').reply(500, { message: 'Server error' });
+
+    const { result } = renderHook(() => useUsers(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    expect(result.current.error).toBeDefined();
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  it('should refetch data on retry', async () => {
+    mockAxios.onGet('/api/users').replyOnce(500).onGet('/api/users').reply(200, { data: [] });
+
+    const { result } = renderHook(() => useUsers(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    act(() => {
+      result.current.refetch();
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+  });
+});
+```
+
+### Mutation Hook Pattern
+```typescript
+describe('useCreateUser Hook Tests', () => {
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
+  );
+
+  it('should create user successfully', async () => {
+    const userData = { name: 'New User', email: 'new@example.com' };
+    const createdUser = { id: 1, ...userData };
+    mockAxios.onPost('/api/users').reply(201, { data: createdUser });
+
+    const { result } = renderHook(() => useCreateUser(), { wrapper });
+
+    act(() => {
+      result.current.mutate(userData);
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data).toEqual(createdUser);
+  });
+
+  it('should handle mutation error', async () => {
+    const userData = { name: 'New User', email: 'invalid-email' };
+    mockAxios.onPost('/api/users').reply(400, { message: 'Invalid email' });
+
+    const { result } = renderHook(() => useCreateUser(), { wrapper });
+
+    act(() => {
+      result.current.mutate(userData);
+    });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    expect(result.current.error).toBeDefined();
+  });
+
+  it('should invalidate queries on success', async () => {
+    const userData = { name: 'New User', email: 'new@example.com' };
+    const createdUser = { id: 1, ...userData };
+    mockAxios.onPost('/api/users').reply(201, { data: createdUser });
+
+    const { result } = renderHook(() => useCreateUser(), { wrapper });
+
+    act(() => {
+      result.current.mutate(userData);
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    // Verify that related queries were invalidated
+    expect(queryClient.getQueryCache().getAll()).toHaveLength(0);
+  });
+});
+```
+
+## Service-Specific Patterns
+
+### CRUD Service Pattern
+```typescript
+describe('CRUD Service Tests', () => {
+  describe('GET operations', () => {
+    it('should fetch all items', async () => {
+      const mockItems = [{ id: 1, name: 'Item 1' }, { id: 2, name: 'Item 2' }];
+      mockAxios.onGet('/api/items').reply(200, { data: mockItems });
+
+      const result = await ItemService.getAll();
+
+      expect(result).toEqual(mockItems);
+    });
+
+    it('should fetch item by ID', async () => {
+      const mockItem = { id: 1, name: 'Item 1' };
+      mockAxios.onGet('/api/items/1').reply(200, { data: mockItem });
+
+      const result = await ItemService.getById(1);
+
+      expect(result).toEqual(mockItem);
+    });
+
+    it('should handle pagination', async () => {
+      const mockResponse = {
+        data: [{ id: 1, name: 'Item 1' }],
+        pagination: { page: 1, limit: 10, total: 1 }
+      };
+      mockAxios.onGet('/api/items?page=1&limit=10').reply(200, mockResponse);
+
+      const result = await ItemService.getPaginated({ page: 1, limit: 10 });
+
+      expect(result).toEqual(mockResponse);
+    });
+  });
+
+  describe('POST operations', () => {
+    it('should create item', async () => {
+      const itemData = { name: 'New Item' };
+      const createdItem = { id: 1, ...itemData };
+      mockAxios.onPost('/api/items').reply(201, { data: createdItem });
+
+      const result = await ItemService.create(itemData);
+
+      expect(result).toEqual(createdItem);
+    });
+
+    it('should validate required fields', async () => {
+      const invalidData = { name: '' };
+      mockAxios.onPost('/api/items').reply(400, { message: 'Name is required' });
+
+      await expect(ItemService.create(invalidData)).rejects.toThrow('Name is required');
+    });
+  });
+
+  describe('PUT operations', () => {
+    it('should update item', async () => {
+      const updateData = { name: 'Updated Item' };
+      const updatedItem = { id: 1, ...updateData };
+      mockAxios.onPut('/api/items/1').reply(200, { data: updatedItem });
+
+      const result = await ItemService.update(1, updateData);
+
+      expect(result).toEqual(updatedItem);
+    });
+  });
+
+  describe('DELETE operations', () => {
+    it('should delete item', async () => {
+      mockAxios.onDelete('/api/items/1').reply(204);
+
+      await ItemService.delete(1);
+
+      expect(mockAxios.history.delete[0].url).toBe('/api/items/1');
+    });
+  });
+});
+```
+
+### Authentication Service Pattern
+```typescript
+describe('AuthService Tests', () => {
+  it('should login user successfully', async () => {
+    const credentials = { email: 'test@example.com', password: 'password' };
+    const authResponse = {
+      user: { id: 1, email: 'test@example.com' },
+      token: 'jwt-token',
+      refreshToken: 'refresh-token'
+    };
+    mockAxios.onPost('/api/auth/login').reply(200, authResponse);
+
+    const result = await AuthService.login(credentials);
+
+    expect(result).toEqual(authResponse);
+    expect(apiClient.getAuthToken()).toBe('jwt-token');
+  });
+
+  it('should refresh token', async () => {
+    const refreshResponse = { token: 'new-jwt-token' };
+    mockAxios.onPost('/api/auth/refresh').reply(200, refreshResponse);
+
+    const result = await AuthService.refreshToken();
+
+    expect(result).toEqual(refreshResponse);
+    expect(apiClient.getAuthToken()).toBe('new-jwt-token');
+  });
+
+  it('should logout user', async () => {
+    mockAxios.onPost('/api/auth/logout').reply(200);
+
+    await AuthService.logout();
+
+    expect(apiClient.getAuthToken()).toBeNull();
+  });
+});
+```
+
+## Quality Standards
+
+### Coverage Requirements
+- **Minimum 90% line coverage** for API service functions
+- **100% coverage** for error handling paths
+- **100% coverage** for authentication flows
+- **100% coverage** for data transformation logic
+
+### Performance Requirements
+- **API response time < 5 seconds** for normal operations
+- **Timeout handling** for requests > 30 seconds
+- **Retry mechanism** with exponential backoff
+- **Request cancellation** for component unmount
+
+### Error Handling Requirements
+- **Network error handling** for connectivity issues
+- **HTTP error status handling** for 4xx and 5xx responses
+- **Timeout error handling** for slow responses
+- **Validation error handling** for invalid requests
+
+## Test Utilities
+
+### Mock API Response Generators
+```typescript
+const createMockUser = (overrides = {}) => ({
+  id: 1,
+  name: 'John Doe',
+  email: 'john@example.com',
+  createdAt: '2023-01-01T00:00:00Z',
+  ...overrides
+});
+
+const createMockAPIResponse = (data: any, status = 200) => ({
+  data,
+  status,
+  statusText: 'OK',
+  headers: { 'content-type': 'application/json' }
+});
+
+const createMockAPIError = (message: string, status = 400) => ({
+  response: {
+    data: { message },
+    status,
+    statusText: 'Bad Request'
+  }
+});
+```
+
+### Test Helpers
+```typescript
+const waitForAPIResponse = async (callback: () => void) => {
+  await waitFor(callback, { timeout: 5000 });
+};
+
+const mockAPIError = (url: string, status: number, message: string) => {
+  mockAxios.onAny(url).reply(status, { message });
+};
+
+const mockAPISuccess = (url: string, data: any, status = 200) => {
+  mockAxios.onAny(url).reply(status, { data });
+};
+```
+
+## Best Practices
+
+### DO's
+- **Mock external API calls** to isolate tests
+- **Test all HTTP methods** (GET, POST, PUT, DELETE)
+- **Test error scenarios** and edge cases
+- **Test authentication flows** thoroughly
+- **Test data transformation** and validation
+- **Use realistic mock data** that matches API responses
+
+### DON'Ts
+- **Don't make real API calls** in unit tests
+- **Don't test third-party library behavior** directly
+- **Don't ignore error handling** scenarios
+- **Don't skip authentication testing**
+- **Don't test implementation details** that don't affect API behavior
+
+## Integration with Other Rules
+
+### With UI Testing Rule
+- API tests focus on service layer and data flow
+- UI tests focus on user interactions and API integration
+- API tests can provide mock data for UI tests
+
+### With Unit Testing Rule
+- API tests focus on HTTP communication and service logic
+- Unit tests focus on business logic and data processing
+- API tests can test data transformation logic
+
+### With Database Testing Rule
+- API tests focus on external API communication
+- Database tests focus on local data persistence
+- API tests can test data synchronization logic
+
+This rule ensures comprehensive API testing that works with any React Native project and can be used independently or in combination with other testing rules.
+description:
+globs:
+alwaysApply: false
+---

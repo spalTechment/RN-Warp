@@ -1,0 +1,173 @@
+# Combined Navigation Setup
+
+## Use Case
+Complex apps requiring multiple navigation types (drawer + tabs + stack).
+
+## Configuration Structure
+```json
+{
+  "navigation": {
+    "type": "combined",
+    "root": {
+      "type": "stack",
+      "screens": ["Auth", "Main"],
+      "initialScreen": "Auth"
+    },
+    "auth": {
+      "type": "stack",
+      "screens": ["Login", "Register"],
+      "initialScreen": "Login"
+    },
+    "main": {
+      "type": "drawer",
+      "screens": ["HomeTabs", "Profile", "Settings"],
+      "initialScreen": "HomeTabs"
+    },
+    "tabs": {
+      "type": "bottom-tabs",
+      "screens": ["Home", "Search", "Notifications"],
+      "initialScreen": "Home"
+    }
+  },
+  "dependencies": {
+    "required": [
+      "@react-navigation/native",
+      "@react-navigation/stack",
+      "@react-navigation/drawer",
+      "@react-navigation/bottom-tabs",
+      "react-native-gesture-handler",
+      "react-native-reanimated"
+    ]
+  }
+}
+```
+
+## Required Dependencies
+```bash
+npm install @react-navigation/native @react-navigation/stack @react-navigation/drawer @react-navigation/bottom-tabs react-native-gesture-handler react-native-reanimated
+```
+
+## File Structure
+```
+src/
+├── navigation/
+│   ├── types.ts
+│   ├── AppNavigator.tsx
+│   ├── AuthNavigator.tsx
+│   ├── MainNavigator.tsx
+│   ├── DrawerNavigator.tsx
+│   └── BottomTabNavigator.tsx
+├── screens/
+│   ├── auth/
+│   │   ├── LoginScreen.tsx
+│   │   └── RegisterScreen.tsx
+│   ├── home/
+│   │   └── HomeScreen.tsx
+│   └── profile/
+│       └── ProfileScreen.tsx
+└── App.tsx
+```
+
+## Implementation Steps
+
+### 1. Navigation Types
+Create `src/navigation/types.ts` with:
+- `RootStackParamList` (Auth, Main)
+- `AuthStackParamList` (Login, Register)
+- `MainDrawerParamList` (HomeTabs, Profile, Settings)
+- `BottomTabParamList` (Home, Search, Notifications)
+
+### 2. Root App Navigator
+Create `src/navigation/AppNavigator.tsx` with:
+- Conditional rendering based on auth state
+- Auth and Main navigator integration
+
+### 3. Auth Navigator
+Create `src/navigation/AuthNavigator.tsx` with:
+- Stack navigator for auth screens
+- Login and Register screen registration
+
+### 4. Main Navigator (Drawer)
+Create `src/navigation/MainNavigator.tsx` with:
+- Drawer navigator for main app sections
+- HomeTabs and other screen integration
+
+### 5. Drawer Navigator (Contains Tabs)
+Create `src/navigation/DrawerNavigator.tsx` with:
+- Bottom tab navigator integration
+- Simple wrapper component
+
+### 6. Bottom Tab Navigator
+Create `src/navigation/BottomTabNavigator.tsx` with:
+- Tab navigator for main app features
+- Screen registration with icons
+
+### 7. Screen Components
+Create placeholder screens in:
+- `src/screens/auth/` (Login, Register)
+- `src/screens/home/` (Home)
+- `src/screens/profile/` (Profile)
+
+### 8. App.tsx
+Configure with:
+- NavigationContainer
+- Gesture handler import
+- AppNavigator integration
+
+## Screen Template
+```tsx
+// Template for all screens
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { [NavigatorType]ScreenProps } from '@react-navigation/[navigator-type]';
+import { [ParamListType] } from '../../navigation/types';
+
+type Props = [NavigatorType]ScreenProps<[ParamListType], '[ScreenName]'>;
+
+const [ScreenName]Screen: React.FC<Props> = ({ navigation, route }) => {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>[ScreenName] Screen</Text>
+      <Text style={styles.subtitle}>Add your UI here</Text>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+  },
+});
+
+export default [ScreenName]Screen;
+```
+
+## Navigation Flow
+1. **AppNavigator**: Handles auth state and routes to Auth or Main
+2. **AuthNavigator**: Stack navigation for login/register
+3. **MainNavigator**: Drawer navigation for main app sections
+4. **DrawerNavigator**: Contains the bottom tab navigator
+5. **BottomTabNavigator**: Tab navigation for main app features
+
+## Key Rules
+- Use conditional rendering based on auth state
+- Keep each navigator focused on one responsibility
+- Use proper type inheritance for nested navigation
+- Handle navigation state properly across navigators
+- Test navigation flow on both platforms
+- Use descriptive screen names in param lists
+- Keep screen components simple with placeholder UI
+- Use TypeScript for all navigation types
+- Follow the file structure exactly as defined

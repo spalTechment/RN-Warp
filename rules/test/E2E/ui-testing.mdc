@@ -1,0 +1,596 @@
+# UI Testing Rules - React Native TypeScript
+
+## Overview
+Comprehensive UI testing standards for React Native TypeScript projects using Detox for E2E testing, component integration testing, accessibility testing, and visual regression testing. All UI tests must cover complete user journeys, cross-platform compatibility, and accessibility compliance.
+
+## E2E Testing with Detox
+
+### Detox Configuration
+- **Use Detox** as the primary E2E testing framework
+- **Configure for both iOS and Android** platforms
+- **Set up device configurations** for different screen sizes
+- **Configure test environment** with proper timeouts
+- **Set up CI/CD integration** for automated testing
+
+### Required Dependencies
+```json
+{
+  "devDependencies": {
+    "detox": "^20.0.0",
+    "@types/detox": "^20.0.0",
+    "detox-cli": "^20.0.0"
+  }
+}
+```
+
+### Detox Configuration File
+```javascript
+// .detoxrc.js
+module.exports = {
+  testRunner: 'jest',
+  runnerConfig: 'e2e/config.json',
+  configurations: {
+    'ios.sim.debug': {
+      type: 'ios.simulator',
+      binaryPath: 'ios/build/Build/Products/Debug-iphonesimulator/AVO.app',
+      build: 'xcodebuild -workspace ios/AVO.xcworkspace -scheme AVO -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build',
+      device: {
+        type: 'iPhone 14',
+        os: 'iOS 16.0',
+      },
+    },
+    'android.emu.debug': {
+      type: 'android.emulator',
+      binaryPath: 'android/app/build/outputs/apk/debug/app-debug.apk',
+      build: 'cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug',
+      device: {
+        avdName: 'Pixel_4_API_30',
+      },
+    },
+  },
+};
+```
+
+## E2E Test Structure
+
+### Basic E2E Test
+```typescript
+// ✅ CORRECT: Complete E2E test
+import { device, element, by, expect } from 'detox';
+
+describe('Authentication Flow', () => {
+  beforeAll(async () => {
+    await device.launchApp();
+  });
+
+  beforeEach(async () => {
+    await device.reloadReactNative();
+  });
+
+  it('should complete login flow successfully', async () => {
+    // Navigate to login screen
+    await element(by.id('login-button')).tap();
+    
+    // Fill login form
+    await element(by.id('email-input')).typeText('test@example.com');
+    await element(by.id('password-input')).typeText('password123');
+    
+    // Submit form
+    await element(by.id('submit-button')).tap();
+    
+    // Verify successful login
+    await expect(element(by.id('home-screen'))).toBeVisible();
+    await expect(element(by.text('Welcome, Test User'))).toBeVisible();
+  });
+
+  it('should show error for invalid credentials', async () => {
+    // Navigate to login screen
+    await element(by.id('login-button')).tap();
+    
+    // Fill with invalid credentials
+    await element(by.id('email-input')).typeText('invalid@example.com');
+    await element(by.id('password-input')).typeText('wrongpassword');
+    
+    // Submit form
+    await element(by.id('submit-button')).tap();
+    
+    // Verify error message
+    await expect(element(by.text('Invalid credentials'))).toBeVisible();
+  });
+});
+```
+
+### E2E Test Requirements
+- **Test complete user journeys** from start to finish
+- **Test error scenarios** and edge cases
+- **Test cross-platform compatibility** (iOS/Android)
+- **Test different screen sizes** and orientations
+- **Test offline scenarios** and network errors
+- **Test accessibility features** and screen readers
+
+## Component Integration Testing
+
+### Screen Integration Test
+```typescript
+// ✅ CORRECT: Screen integration test
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { HomeScreen } from '../HomeScreen';
+import { PetService } from '../../services/PetService';
+
+// Mock the service
+jest.mock('../../services/PetService');
+
+describe('HomeScreen Integration', () => {
+  const mockPets = [
+    { id: '1', name: 'Fluffy', type: 'cat' },
+    { id: '2', name: 'Rex', type: 'dog' },
+  ];
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (PetService.getPets as jest.Mock).mockResolvedValue(mockPets);
+  });
+
+  it('should load and display pets', async () => {
+    // Arrange
+    render(
+      <NavigationContainer>
+        <HomeScreen />
+      </NavigationContainer>
+    );
+
+    // Act - Wait for data to load
+    await waitFor(() => {
+      expect(screen.getByText('Fluffy')).toBeTruthy();
+    });
+
+    // Assert
+    expect(screen.getByText('Rex')).toBeTruthy();
+    expect(PetService.getPets).toHaveBeenCalledTimes(1);
+  });
+
+  it('should handle pet selection', async () => {
+    // Arrange
+    const mockNavigation = { navigate: jest.fn() };
+    render(
+      <NavigationContainer>
+        <HomeScreen navigation={mockNavigation} />
+      </NavigationContainer>
+    );
+
+    // Act - Wait for data and select pet
+    await waitFor(() => {
+      expect(screen.getByText('Fluffy')).toBeTruthy();
+    });
+    
+    fireEvent.press(screen.getByText('Fluffy'));
+
+    // Assert
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('PetDetail', {
+      petId: '1',
+    });
+  });
+});
+```
+
+### Form Integration Test
+```typescript
+// ✅ CORRECT: Form integration test
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { LoginForm } from '../LoginForm';
+import { AuthService } from '../../services/AuthService';
+
+jest.mock('../../services/AuthService');
+
+describe('LoginForm Integration', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should handle successful login', async () => {
+    // Arrange
+    const mockOnSuccess = jest.fn();
+    (AuthService.login as jest.Mock).mockResolvedValue({
+      user: { id: '1', name: 'Test User' },
+      token: 'mock-token',
+    });
+
+    render(<LoginForm onSuccess={mockOnSuccess} />);
+
+    // Act
+    fireEvent.changeText(screen.getByTestId('email-input'), 'test@example.com');
+    fireEvent.changeText(screen.getByTestId('password-input'), 'password123');
+    fireEvent.press(screen.getByText('Login'));
+
+    // Assert
+    await waitFor(() => {
+      expect(AuthService.login).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        password: 'password123',
+      });
+      expect(mockOnSuccess).toHaveBeenCalled();
+    });
+  });
+
+  it('should handle validation errors', async () => {
+    // Arrange
+    render(<LoginForm onSuccess={jest.fn()} />);
+
+    // Act - Submit without filling form
+    fireEvent.press(screen.getByText('Login'));
+
+    // Assert
+    expect(screen.getByText('Email is required')).toBeTruthy();
+    expect(screen.getByText('Password is required')).toBeTruthy();
+  });
+});
+```
+
+## Accessibility Testing
+
+### Accessibility Test Structure
+```typescript
+// ✅ CORRECT: Accessibility testing
+import React from 'react';
+import { render, screen } from '@testing-library/react-native';
+import { AccessibilityInfo } from 'react-native';
+import { Button } from '../Button';
+
+// Mock AccessibilityInfo
+jest.mock('react-native', () => ({
+  ...jest.requireActual('react-native'),
+  AccessibilityInfo: {
+    announceForAccessibility: jest.fn(),
+    isScreenReaderEnabled: jest.fn(),
+  },
+}));
+
+describe('Button Accessibility', () => {
+  it('should have proper accessibility props', () => {
+    // Arrange
+    render(<Button title="Test Button" onPress={jest.fn()} />);
+
+    // Act
+    const button = screen.getByText('Test Button');
+
+    // Assert
+    expect(button.props.accessibilityLabel).toBe('Test Button');
+    expect(button.props.accessibilityRole).toBe('button');
+    expect(button.props.accessibilityHint).toBeTruthy();
+  });
+
+  it('should announce actions to screen readers', () => {
+    // Arrange
+    const mockAnnounce = jest.fn();
+    (AccessibilityInfo.announceForAccessibility as jest.Mock) = mockAnnounce;
+    
+    render(<Button title="Test Button" onPress={jest.fn()} />);
+
+    // Act
+    fireEvent.press(screen.getByText('Test Button'));
+
+    // Assert
+    expect(mockAnnounce).toHaveBeenCalledWith('Button pressed');
+  });
+
+  it('should support keyboard navigation', () => {
+    // Arrange
+    render(<Button title="Test Button" onPress={jest.fn()} />);
+
+    // Act
+    const button = screen.getByText('Test Button');
+    fireEvent(button, 'keyPress', { key: 'Enter' });
+
+    // Assert
+    expect(button.props.onKeyPress).toBeDefined();
+  });
+});
+```
+
+### Accessibility Test Requirements
+- **Test screen reader compatibility** with proper labels
+- **Test keyboard navigation** for all interactive elements
+- **Test color contrast** and visual accessibility
+- **Test focus management** and tab order
+- **Test dynamic content** announcements
+- **Test alternative text** for images and icons
+
+## Visual Regression Testing
+
+### Visual Test Structure
+```typescript
+// ✅ CORRECT: Visual regression testing
+import React from 'react';
+import { render } from '@testing-library/react-native';
+import { Button } from '../Button';
+
+describe('Button Visual Regression', () => {
+  it('should match primary button snapshot', () => {
+    // Arrange
+    const { toJSON } = render(
+      <Button title="Primary Button" variant="primary" />
+    );
+
+    // Act & Assert
+    expect(toJSON()).toMatchSnapshot();
+  });
+
+  it('should match disabled button snapshot', () => {
+    // Arrange
+    const { toJSON } = render(
+      <Button title="Disabled Button" disabled={true} />
+    );
+
+    // Act & Assert
+    expect(toJSON()).toMatchSnapshot();
+  });
+
+  it('should match button with icon snapshot', () => {
+    // Arrange
+    const { toJSON } = render(
+      <Button 
+        title="Button with Icon" 
+        icon="heart" 
+        iconPosition="left" 
+      />
+    );
+
+    // Act & Assert
+    expect(toJSON()).toMatchSnapshot();
+  });
+});
+```
+
+### Visual Test Requirements
+- **Create baseline snapshots** for all component variants
+- **Test different themes** and color schemes
+- **Test responsive layouts** and screen sizes
+- **Test loading states** and animations
+- **Test error states** and empty states
+- **Update snapshots** when intentional changes are made
+
+## Cross-Platform Testing
+
+### Platform-Specific Tests
+```typescript
+// ✅ CORRECT: Cross-platform testing
+import React from 'react';
+import { Platform } from 'react-native';
+import { render, screen } from '@testing-library/react-native';
+import { CustomButton } from '../CustomButton';
+
+describe('CustomButton Cross-Platform', () => {
+  it('should render correctly on iOS', () => {
+    // Arrange
+    Platform.OS = 'ios';
+    render(<CustomButton title="iOS Button" />);
+
+    // Act
+    const button = screen.getByText('iOS Button');
+
+    // Assert
+    expect(button.props.style).toMatchObject({
+      backgroundColor: '#007AFF', // iOS blue
+    });
+  });
+
+  it('should render correctly on Android', () => {
+    // Arrange
+    Platform.OS = 'android';
+    render(<CustomButton title="Android Button" />);
+
+    // Act
+    const button = screen.getByText('Android Button');
+
+    // Assert
+    expect(button.props.style).toMatchObject({
+      backgroundColor: '#6200EE', // Material Design purple
+    });
+  });
+});
+```
+
+## Performance Testing
+
+### UI Performance Tests
+```typescript
+// ✅ CORRECT: UI performance testing
+import React from 'react';
+import { render } from '@testing-library/react-native';
+import { PetList } from '../PetList';
+
+describe('PetList Performance', () => {
+  it('should render large lists efficiently', () => {
+    // Arrange
+    const largePetList = Array.from({ length: 1000 }, (_, i) => ({
+      id: i.toString(),
+      name: `Pet ${i}`,
+      type: 'dog',
+    }));
+
+    // Act
+    const startTime = performance.now();
+    render(<PetList pets={largePetList} />);
+    const endTime = performance.now();
+
+    // Assert
+    expect(endTime - startTime).toBeLessThan(100); // Should render in < 100ms
+  });
+
+  it('should handle scroll performance', async () => {
+    // Arrange
+    const { getByTestId } = render(<PetList pets={largePetList} />);
+    const scrollView = getByTestId('pet-list-scroll');
+
+    // Act
+    const startTime = performance.now();
+    fireEvent.scroll(scrollView, {
+      nativeEvent: {
+        contentOffset: { y: 1000 },
+        contentSize: { height: 2000, width: 400 },
+        layoutMeasurement: { height: 400, width: 400 },
+      },
+    });
+    const endTime = performance.now();
+
+    // Assert
+    expect(endTime - startTime).toBeLessThan(16); // Should scroll in < 16ms (60fps)
+  });
+});
+```
+
+## Test Data Management
+
+### UI Test Data Factories
+```typescript
+// e2e/factories/uiTestData.ts
+export const createTestUser = (overrides = {}) => ({
+  id: 'test-user-1',
+  name: 'Test User',
+  email: 'test@example.com',
+  avatar: 'https://example.com/avatar.jpg',
+  ...overrides,
+});
+
+export const createTestPet = (overrides = {}) => ({
+  id: 'test-pet-1',
+  name: 'Test Pet',
+  type: 'dog',
+  breed: 'Golden Retriever',
+  age: 3,
+  owner: 'test-user-1',
+  ...overrides,
+});
+
+export const createTestFormData = (overrides = {}) => ({
+  email: 'test@example.com',
+  password: 'TestPassword123!',
+  confirmPassword: 'TestPassword123!',
+  firstName: 'Test',
+  lastName: 'User',
+  ...overrides,
+});
+```
+
+## Test Utilities
+
+### E2E Test Utilities
+```typescript
+// e2e/utils/testUtils.ts
+import { device, element, by, expect } from 'detox';
+
+export const loginUser = async (email: string, password: string) => {
+  await element(by.id('email-input')).typeText(email);
+  await element(by.id('password-input')).typeText(password);
+  await element(by.id('login-button')).tap();
+  await expect(element(by.id('home-screen'))).toBeVisible();
+};
+
+export const navigateToScreen = async (screenName: string) => {
+  await element(by.id(`${screenName}-tab`)).tap();
+  await expect(element(by.id(`${screenName}-screen`))).toBeVisible();
+};
+
+export const waitForElement = async (testId: string, timeout = 5000) => {
+  await waitFor(element(by.id(testId))).toBeVisible().withTimeout(timeout);
+};
+
+export const clearAndTypeText = async (testId: string, text: string) => {
+  await element(by.id(testId)).clearText();
+  await element(by.id(testId)).typeText(text);
+};
+```
+
+## CI/CD Integration
+
+### Detox CI Configuration
+```yaml
+# .github/workflows/e2e-tests.yml
+name: E2E Tests
+on: [push, pull_request]
+
+jobs:
+  e2e-tests:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Build iOS app
+        run: |
+          cd ios
+          xcodebuild -workspace AVO.xcworkspace -scheme AVO -configuration Debug -sdk iphonesimulator -derivedDataPath build
+          
+      - name: Run E2E tests
+        run: |
+          npx detox test --configuration ios.sim.debug --headless
+```
+
+## Do's and Don'ts
+
+### ✅ DO's:
+- **Test complete user journeys** from start to finish
+- **Test cross-platform compatibility** (iOS/Android)
+- **Test accessibility features** and screen readers
+- **Test error scenarios** and edge cases
+- **Test performance** for critical UI components
+- **Use descriptive test names** that explain the scenario
+- **Mock external dependencies** consistently
+- **Test different screen sizes** and orientations
+- **Test offline scenarios** and network errors
+- **Maintain visual regression tests** for UI consistency
+- **Test keyboard navigation** and focus management
+- **Use test utilities** for common operations
+
+### ❌ DON'Ts:
+- **Don't test implementation details** - test user behavior
+- **Don't skip error scenarios** - they're critical for UX
+- **Don't ignore accessibility** - it's a legal requirement
+- **Don't test only happy paths** - test edge cases
+- **Don't forget cross-platform testing** - iOS and Android differ
+- **Don't ignore performance** - slow UI kills user experience
+- **Don't skip visual regression** - UI consistency matters
+- **Don't test third-party components** - focus on your app
+- **Don't write brittle tests** - use stable selectors
+- **Don't ignore offline scenarios** - mobile apps need offline support
+
+## Implementation Checklist
+
+### Before Writing UI Tests:
+- [ ] Identify critical user journeys
+- [ ] Plan cross-platform test scenarios
+- [ ] Set up accessibility testing tools
+- [ ] Configure visual regression testing
+- [ ] Plan performance benchmarks
+
+### UI Test Implementation:
+- [ ] Write E2E tests for critical flows
+- [ ] Add component integration tests
+- [ ] Implement accessibility tests
+- [ ] Create visual regression tests
+- [ ] Add cross-platform compatibility tests
+- [ ] Test performance for critical components
+
+### Test Validation:
+- [ ] All tests pass on both platforms
+- [ ] Accessibility compliance verified
+- [ ] Visual regression tests updated
+- [ ] Performance benchmarks met
+- [ ] User journeys complete successfully
+- [ ] Error scenarios handled properly
+
+This comprehensive UI testing framework ensures high-quality, accessible, and performant React Native applications.
+description:
+globs:
+alwaysApply: false
+---

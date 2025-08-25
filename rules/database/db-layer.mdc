@@ -1,0 +1,148 @@
+---
+description: Rules for implementing the local DB layer in React Native projects. Enforces configuration-driven, resource-segregated models, schema, sync logic, and offline persistence. Supports any database engine (e.g., SQLite, WatermelonDB, Realm) as defined in project configuration.
+rule_type: [CODING_STANDARDS, CONFIG_DRIVEN, BEST_PRACTICES, OFFLINE_PERSISTENCE]
+globs:
+  - "**/db/**/*.ts"
+  - "**/db/**/*.tsx"
+  - "**/database/**/*.ts"
+  - "**/database/**/*.tsx"
+alwaysApply: false
+---
+
+# Local DB Layer Rules - Config-Driven and Resource-Segregated
+
+## Overview
+All local database code must be implemented according to the active project configuration defined in `config/*.json`.  
+Never hardcode model definitions, schema, or sync logic.  
+**The DB engine (SQLite, WatermelonDB, Realm, etc.) must be selected and configured based on `config.localDB.engine`.**
+
+## Directory Structure
+
+- **DB root:** Use the path specified in `config.fileStructure.db` (e.g., `src/db/`)
+- **Subdirectories:**
+  - `models/` - TypeScript interfaces/classes for DB models, generated from `config.dataModels`. **One file per resource** (e.g., `Pet.ts`, `Order.ts`, `User.ts`).
+  - `services/` - DB service classes and CRUD operations, one file per resource (e.g., `PetDatabaseService.ts`).
+  - `sync/` - Synchronization logic for API-DB sync.
+  - `utils/` - Utility functions for DB operations.
+  - `constants/` - DB-related constants.
+  - `core/` - Core DB management (e.g., `DatabaseManager.ts`).
+  - `index.ts` - DB initialization and barrel exports.
+
+## Model Definition
+
+- **Resource models:** Place each DB model in its own file under `models/`, named per resource.
+- **Schema:** Generate from `config.dataModels` for each resource.
+- **Strong typing:** Use TypeScript interfaces/types/classes.
+
+## Database Initialization
+
+- **Engine selection:** Use the engine specified in `config.localDB.engine` (e.g., SQLite, WatermelonDB, Realm).
+- **Initialization:** Configure DB name, location, and schema from `config.localDB` and `config.localDB.schema`.
+
+## CRUD Operations
+
+- Implement service classes for each model in `services/`.
+- Use transactions and batch operations as supported by the selected engine.
+
+## Synchronization Service
+
+- Implement sync logic using `lastPulledAt` or equivalent.
+- Pull changes from API endpoints in `config.api.endpoints`.
+- Push local changes to API when online.
+- Prefer server data on conflict or implement custom resolution as needed.
+
+## Offline-First Strategy
+
+- Use delta sync with timestamps or versioning.
+- Queue mutations while offline and sync when online.
+- Prioritize fresh API data; fallback to local DB when stale.
+
+## Error Handling
+
+- Handle sync and CRUD failures with retry logic.
+- Implement conflict resolution.
+- Log errors per environment `logLevel` in `config.environments`.
+
+## Testing
+
+- Mirror DB structure in `__tests__/db/`.
+- Use mock data based on models.
+- Test CRUD, sync, and error scenarios.
+
+## Import Organization
+
+1. External libraries
+2. Internal modules (per fileStructure)
+3. Type/model imports
+
+## Example DB Layer Structure
+
+```
+src/db/
+models/
+Pet.ts
+Order.ts
+User.ts
+services/
+PetDatabaseService.ts
+OrderDatabaseService.ts
+UserDatabaseService.ts
+sync/
+SyncManager.ts
+utils/
+DatabaseUtils.ts
+constants/
+DatabaseConstants.ts
+core/
+DatabaseManager.ts
+index.ts
+```
+
+## Feature and Permission Management
+
+- Implement only features listed in `config.features.enabled`.
+- Request permissions listed in `config.features.permissions` if required.
+
+## Do's and Don'ts
+
+### ✅ DO's:
+- **Use database engine** specified in `config.localDB.engine`
+- **Create separate files** for each resource model
+- **Implement CRUD operations** with proper transactions
+- **Add sync logic** with `lastPulledAt` timestamps
+- **Handle offline-first** strategy with delta sync
+- **Implement conflict resolution** logic
+- **Add retry logic** for sync failures
+- **Test CRUD and sync** scenarios
+- **Use proper TypeScript** types for all models
+- **Implement proper error handling** for all operations
+- **Log errors** according to environment settings
+- **Validate data** before saving to database
+- **Use transactions** for complex operations
+- **Implement proper indexing** for performance
+
+### ❌ DON'Ts:
+- **Never hardcode** model definitions or schema
+- **Don't mix** different resources in same model files
+- **Don't skip** offline persistence implementation
+- **Don't ignore** sync conflicts and resolution
+- **Don't forget** to handle sync failures gracefully
+- **Don't create** untyped database models
+- **Don't skip** testing database operations
+- **Don't ignore** performance considerations
+- **Don't forget** to handle database errors
+- **Don't create** monolithic database files
+- **Don't skip** data validation
+- **Don't ignore** transaction management
+
+This ensures consistent, reliable, and maintainable database layer implementation.
+
+```
+
+
+## Feature and Permission Management
+
+- Implement only features listed in `config.features.enabled`.
+- Request permissions listed in `config.features.permissions` if required.
+
+---

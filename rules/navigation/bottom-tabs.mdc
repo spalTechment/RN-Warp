@@ -1,0 +1,165 @@
+# Bottom Tabs Navigation Setup
+
+## Use Case
+Apps requiring bottom tab navigation with multiple main sections.
+
+## Configuration Structure
+```json
+{
+  "navigation": {
+    "type": "bottom-tabs",
+    "screens": ["Home", "Search", "Profile", "Settings"],
+    "initialScreen": "Home",
+    "headerShown": false,
+    "tabBarStyle": {
+      "backgroundColor": "#fff",
+      "borderTopWidth": 1,
+      "borderTopColor": "#e0e0e0"
+    },
+    "tabBarActiveTintColor": "#007AFF",
+    "tabBarInactiveTintColor": "#8E8E93"
+  },
+  "dependencies": {
+    "required": [
+      "@react-navigation/native",
+      "@react-navigation/bottom-tabs",
+      "react-native-vector-icons"
+    ]
+  }
+}
+```
+
+## Required Dependencies
+```bash
+npm install @react-navigation/native @react-navigation/bottom-tabs react-native-vector-icons
+```
+
+## File Structure
+```
+src/
+├── navigation/
+│   ├── types.ts
+│   └── BottomTabNavigator.tsx
+├── screens/
+│   ├── HomeScreen.tsx
+│   ├── SearchScreen.tsx
+│   ├── ProfileScreen.tsx
+│   └── SettingsScreen.tsx
+└── App.tsx
+```
+
+## Implementation Steps
+
+### 1. Navigation Types
+Create `src/navigation/types.ts` with:
+- `BottomTabParamList` (Home, Search, Profile, Settings)
+
+### 2. Bottom Tab Navigator
+Create `src/navigation/BottomTabNavigator.tsx` with:
+- Tab navigator configuration
+- Screen registration
+- Tab bar styling and icons
+
+### 3. Screen Components
+Create placeholder screens in `src/screens/`:
+- `HomeScreen.tsx`
+- `SearchScreen.tsx`
+- `ProfileScreen.tsx`
+- `SettingsScreen.tsx`
+
+### 4. App.tsx
+Configure with:
+- NavigationContainer
+- BottomTabNavigator integration
+
+## Screen Template
+```tsx
+// Template for all screens
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { BottomTabParamList } from '../navigation/types';
+
+type Props = BottomTabScreenProps<BottomTabParamList, '[ScreenName]'>;
+
+const [ScreenName]Screen: React.FC<Props> = ({ navigation, route }) => {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>[ScreenName] Screen</Text>
+      <Text style={styles.subtitle}>Add your UI here</Text>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+  },
+});
+
+export default [ScreenName]Screen;
+```
+
+## Icon Setup
+
+### For React Native Vector Icons
+```tsx
+// Import at top of BottomTabNavigator.tsx
+import Icon from 'react-native-vector-icons/Ionicons';
+```
+
+### For Custom Icons
+```tsx
+// Custom icon component
+const CustomIcon: React.FC<{ name: string; color: string; size: number }> = ({ name, color, size }) => {
+  return (
+    <View style={{ width: size, height: size, backgroundColor: color }}>
+      {/* Your custom icon implementation */}
+    </View>
+  );
+};
+```
+
+## Tab Bar Customization
+```tsx
+// Advanced tab bar options
+screenOptions={{
+  tabBarStyle: {
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    height: 60,
+    paddingBottom: 5,
+  },
+  tabBarLabelStyle: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  tabBarIconStyle: {
+    marginTop: 5,
+  },
+}}
+```
+
+## Key Rules
+- Use descriptive tab names and icons
+- Keep tab count between 3-5 for optimal UX
+- Use consistent icon styling across tabs
+- Handle tab-specific state management
+- Test tab switching performance
+- Use proper bottom tab screen props typing
+- Keep screen components simple with placeholder UI
+- Use TypeScript for all navigation types
+- Follow the file structure exactly as defined

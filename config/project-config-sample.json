@@ -1,0 +1,443 @@
+{
+    "project": {
+      "name": "PetStoreApp",
+      "type": "mobile",
+      "platform": "react-native",
+      "version": "1.0.0",
+      "description": "A React Native app for managing pets using Swagger PetStore API",
+      "domain": "pet-management"
+    },
+    "fileStructure": {
+      "api": "src/api",
+      "components": "src/components",
+      "constants": "src/constants",
+      "context": "src/context",
+      "hooks": "src/hooks",
+      "navigation": "src/navigation",
+      "screens": "src/screens",
+      "services": "src/services",
+      "models": "src/models",
+      "types": "src/types",
+      "utils": "src/utils",
+      "theme": "src/theme"
+    },
+    "api": {
+      "baseUrl": "https://petstore.swagger.io/v2",
+      "endpoints": {
+        "pets": {
+          "findByStatus": "/pet/findByStatus",
+          "findById": "/pet/{petId}",
+          "addPet": "/pet",
+          "updatePet": "/pet",
+          "deletePet": "/pet/{petId}",
+          "uploadImage": "/pet/{petId}/uploadImage"
+        },
+        "store": {
+          "inventory": "/store/inventory",
+          "placeOrder": "/store/order",
+          "findOrder": "/store/order/{orderId}",
+          "deleteOrder": "/store/order/{orderId}"
+        },
+        "user": {
+          "createUser": "/user",
+          "login": "/user/login",
+          "logout": "/user/logout",
+          "getUserByName": "/user/{username}",
+          "updateUser": "/user/{username}",
+          "deleteUser": "/user/{username}"
+        }
+      }
+    },
+    "localDB": {
+      "engine": "sqlite",
+      "_comment": "Options: 'sqlite', 'watermelondb', 'realm', etc.",
+      "dbName": "PetStoreAppDB.db",
+      "location": "default",
+      "schema": {
+        "pets": {
+          "id": "INTEGER PRIMARY KEY",
+          "category": "TEXT",
+          "name": "TEXT",
+          "photoUrls": "TEXT",
+          "tags": "TEXT",
+          "status": "TEXT"
+        },
+        "orders": {
+          "id": "INTEGER PRIMARY KEY",
+          "petId": "INTEGER",
+          "quantity": "INTEGER",
+          "shipDate": "TEXT",
+          "status": "TEXT",
+          "complete": "INTEGER"
+        },
+        "users": {
+          "id": "INTEGER PRIMARY KEY",
+          "username": "TEXT",
+          "firstName": "TEXT",
+          "lastName": "TEXT",
+          "email": "TEXT",
+          "password": "TEXT",
+          "phone": "TEXT",
+          "userStatus": "INTEGER"
+        }
+      },
+      "sync": {
+        "pullInterval": 300000,
+        "pushOnConnect": true,
+        "conflictResolution": "serverWins"
+      }
+    },
+    "architecture": {
+      "stateManagement": "context-api",
+      "navigation": "@react-navigation/native",
+      "dataFetching": "fetch/axios",
+      "httpClient": "axios",
+      "testing": "jest",
+      "styling": "stylesheet",
+      "imageHandling": "react-native-fast-image",
+      "forms": "react-hook-form",
+      "validation": "yup"
+    },
+    "design": {
+      "colors": {
+        "primary": "#7C2D12",
+        "secondary": "#14532D",
+        "accent": "#1E3A8A",
+        "neutral": "#171717",
+        "success": "#10B981",
+        "warning": "#F59E0B",
+        "error": "#EF4444",
+        "info": "#06B6D4"
+      },
+      "spacing": {
+        "xs": 4,
+        "sm": 8,
+        "md": 16,
+        "lg": 24,
+        "xl": 32,
+        "2xl": 48,
+        "3xl": 64,
+        "4xl": 80
+      },
+      "typography": {
+        "fontFamily": {
+          "primary": "System",
+          "secondary": "System",
+          "mono": "Courier"
+        },
+        "fontSize": {
+          "xs": 12,
+          "sm": 14,
+          "base": 16,
+          "lg": 18,
+          "xl": 20,
+          "2xl": 24,
+          "3xl": 30,
+          "4xl": 36,
+          "5xl": 48
+        },
+        "fontWeight": {
+          "light": "300",
+          "normal": "400",
+          "medium": "500",
+          "semibold": "600",
+          "bold": "700",
+          "extrabold": "800"
+        },
+        "lineHeight": {
+          "tight": 1.25,
+          "normal": 1.5,
+          "relaxed": 1.75
+        }
+      },
+      "borderRadius": {
+        "none": 0,
+        "sm": 4,
+        "md": 8,
+        "lg": 12,
+        "xl": 16,
+        "2xl": 24,
+        "full": 9999
+      },
+      "shadows": {
+        "sm": {
+          "shadowColor": "#000",
+          "shadowOffset": {
+            "width": 0,
+            "height": 1
+          },
+          "shadowOpacity": 0.05,
+          "shadowRadius": 2,
+          "elevation": 1
+        },
+        "md": {
+          "shadowColor": "#000",
+          "shadowOffset": {
+            "width": 0,
+            "height": 4
+          },
+          "shadowOpacity": 0.1,
+          "shadowRadius": 6,
+          "elevation": 3
+        },
+        "lg": {
+          "shadowColor": "#000",
+          "shadowOffset": {
+            "width": 0,
+            "height": 10
+          },
+          "shadowOpacity": 0.15,
+          "shadowRadius": 15,
+          "elevation": 6
+        }
+      }
+    },
+    "navigation": {
+      "type": "auth-bottomtab",
+      "splash": {
+        "enabled": true,
+        "duration": 2000,
+        "component": "SplashScreen",
+        "authCheck": true
+      },
+      "auth": {
+        "screens": ["Login", "Register"],
+        "initialScreen": "Login",
+        "flow": {
+          "Login": {
+            "onSuccess": "MainBottomTabs",
+            "onRegisterPress": "Register",
+            "component": "LoginScreen"
+          },
+          "Register": {
+            "onSuccess": "MainBottomTabs",
+            "onLoginPress": "Login",
+            "component": "RegisterScreen"
+          }
+        }
+      },
+      "main": {
+        "type": "bottom-tabs",
+        "screens": [
+          "Home",
+          "Pets",
+          "Orders",
+          "Profile"
+        ],
+        "initialScreen": "Home",
+        "tabConfig": {
+          "tabBarPosition": "bottom",
+          "tabBarStyle": {
+            "backgroundColor": "design.colors.background.primary",
+            "borderTopColor": "design.colors.border.light",
+            "borderTopWidth": 1
+          },
+          "tabBarActiveTintColor": "design.colors.primary",
+          "tabBarInactiveTintColor": "design.colors.neutral.grey300",
+          "headerShown": true
+        },
+        "stackScreens": {
+          "Home": {
+            "component": "HomeScreen",
+            "stackScreens": {
+              "PetDetails": {
+                "component": "PetDetailsScreen"
+              },
+              "AddPet": {
+                "component": "AddPetScreen"
+              },
+              "EditPet": {
+                "component": "EditPetScreen"
+              },
+              "OrderDetails": {
+                "component": "OrderDetailsScreen"
+              },
+              "Checkout": {
+                "component": "CheckoutScreen"
+              }
+            }
+          },
+          "Pets": {
+            "component": "PetsScreen",
+            "stackScreens": {
+              "PetDetails": {
+                "component": "PetDetailsScreen"
+              },
+              "AddPet": {
+                "component": "AddPetScreen"
+              },
+              "EditPet": {
+                "component": "EditPetScreen"
+              },
+              "Search": {
+                "component": "SearchScreen"
+              },
+              "Favorites": {
+                "component": "FavoritesScreen"
+              }
+            }
+          },
+          "Orders": {
+            "component": "OrdersScreen",
+            "stackScreens": {
+              "OrderDetails": {
+                "component": "OrderDetailsScreen"
+              },
+              "Checkout": {
+                "component": "CheckoutScreen"
+              },
+              "OrderPet": {
+                "component": "OrderPetScreen"
+              }
+            }
+          },
+          "Profile": {
+            "component": "ProfileScreen",
+            "stackScreens": {
+              "EditProfile": {
+                "component": "EditProfileScreen"
+              },
+              "Settings": {
+                "component": "SettingsScreen"
+              }
+            }
+          }
+        }
+      }
+    },
+    "screenFlow": {
+      "initialScreen": "Splash",
+      "authenticationRequired": true,
+      "transitions": {
+        "Splash": {
+          "duration": 2000,
+          "nextScreenLogic": "checkAuthentication",
+          "authenticated": "MainBottomTabs",
+          "unauthenticated": "Auth.Login"
+        },
+        "Auth.Login": {
+          "onSuccess": "MainBottomTabs",
+          "onRegisterPress": "Auth.Register"
+        },
+        "Auth.Register": {
+          "onSuccess": "MainBottomTabs",
+          "onLoginPress": "Auth.Login"
+        },
+        "MainBottomTabs.Home": {
+          "quickActions": {
+            "browsePets": "MainBottomTabs.Pets",
+            "addPet": "Home.AddPet",
+            "myOrders": "MainBottomTabs.Orders",
+            "favorites": "Pets.Favorites"
+          },
+          "onPetSelect": "Home.PetDetails",
+          "onOrderSelect": "Home.OrderDetails"
+        },
+        "MainBottomTabs.Pets": {
+          "onPetSelect": "Pets.PetDetails",
+          "onAddPet": "Pets.AddPet",
+          "onSearch": "Pets.Search",
+          "onFavorites": "Pets.Favorites"
+        },
+        "Pets.PetDetails": {
+          "onEdit": "Pets.EditPet",
+          "onOrder": "Orders.OrderPet",
+          "onFavorite": "toggleFavorite",
+          "onBack": "MainBottomTabs.Pets"
+        },
+        "Pets.AddPet": {
+          "onSuccess": "MainBottomTabs.Pets",
+          "onCancel": "MainBottomTabs.Pets"
+        },
+        "Pets.EditPet": {
+          "onSuccess": "Pets.PetDetails",
+          "onCancel": "Pets.PetDetails",
+          "onDelete": "MainBottomTabs.Pets"
+        },
+        "Pets.Search": {
+          "onPetSelect": "Pets.PetDetails",
+          "onBack": "MainBottomTabs.Pets"
+        },
+        "Pets.Favorites": {
+          "onPetSelect": "Pets.PetDetails",
+          "onBack": "MainBottomTabs.Pets"
+        },
+        "MainBottomTabs.Orders": {
+          "onOrderSelect": "Orders.OrderDetails",
+          "onCheckout": "Orders.Checkout",
+          "onNewOrder": "Orders.OrderPet"
+        },
+        "Orders.OrderDetails": {
+          "onEdit": "Orders.EditOrder",
+          "onCancel": "MainBottomTabs.Orders",
+          "onBack": "MainBottomTabs.Orders"
+        },
+        "Orders.Checkout": {
+          "onSuccess": "Orders.OrderDetails",
+          "onCancel": "MainBottomTabs.Orders"
+        },
+        "Orders.OrderPet": {
+          "onSuccess": "Orders.OrderDetails",
+          "onCancel": "MainBottomTabs.Orders"
+        },
+        "MainBottomTabs.Profile": {
+          "onEdit": "Profile.EditProfile",
+          "onSettings": "Profile.Settings",
+          "onLogout": "Auth.Login"
+        },
+        "Profile.EditProfile": {
+          "onSuccess": "MainBottomTabs.Profile",
+          "onCancel": "MainBottomTabs.Profile"
+        },
+        "Profile.Settings": {
+          "onBack": "MainBottomTabs.Profile"
+        }
+      },
+      "globalActions": {
+        "logout": {
+          "destination": "Auth.Login",
+          "clearStack": true
+        },
+        "goBack": {
+          "action": "navigation.goBack()"
+        }
+      }
+    },
+   
+    "dataModels": {
+      "Pet": {
+        "id": "number",
+        "category": "Category",
+        "name": "string",
+        "photoUrls": "string[]",
+        "tags": "Tag[]",
+        "status": "'available' | 'pending' | 'sold'"
+      },
+      "Category": {
+        "id": "number",
+        "name": "string"
+      },
+      "Tag": {
+        "id": "number",
+        "name": "string"
+      },
+      "Order": {
+        "id": "number",
+        "petId": "number",
+        "quantity": "number",
+        "shipDate": "string",
+        "status": "'placed' | 'approved' | 'delivered'",
+        "complete": "boolean"
+      },
+      "User": {
+        "id": "number",
+        "username": "string",
+        "firstName": "string",
+        "lastName": "string",
+        "email": "string",
+        "password": "string",
+        "phone": "string",
+        "userStatus": "number"
+      }
+    }
+  }

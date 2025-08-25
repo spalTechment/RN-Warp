@@ -1,0 +1,624 @@
+# Comprehensive React Native Testing Rule
+
+## Overview
+This rule provides a complete testing framework for React Native projects, covering UI testing, unit testing, API layer testing, and database layer testing. It works for both existing and new screens, ensuring comprehensive test coverage across all layers of the application.
+
+## Core Principle
+**EVERY React Native component, screen, service, and utility MUST have comprehensive test coverage.** This includes UI interactions, business logic, API integrations, database operations, and error handling scenarios.
+
+## Testing Layers Covered
+
+### 1. UI Testing (Component & Screen Level)
+### 2. Unit Testing (Business Logic & Utilities)
+### 3. API Layer Testing (Services & Hooks)
+### 4. Database Layer Testing (Local Storage & Sync)
+
+## Test Generation Requirements
+
+### 1. UI Testing Requirements
+
+#### A. Component Testing
+```typescript
+describe('ComponentName', () => {
+  describe('Rendering', () => {
+    it('should render correctly with default props', () => {
+      // Test basic rendering
+    });
+    
+    it('should render with custom props', () => {
+      // Test with different prop combinations
+    });
+    
+    it('should handle conditional rendering', () => {
+      // Test conditional UI elements
+    });
+  });
+
+  describe('User Interactions', () => {
+    it('should handle user interactions correctly', () => {
+      // Test button presses, form inputs, etc.
+    });
+    
+    it('should call callback functions', () => {
+      // Test prop callbacks
+    });
+    
+    it('should update state on interactions', () => {
+      // Test state changes
+    });
+  });
+
+  describe('Accessibility', () => {
+    it('should have proper accessibility labels', () => {
+      // Test accessibility support
+    });
+    
+    it('should support screen readers', () => {
+      // Test screen reader compatibility
+    });
+  });
+});
+```
+
+#### B. Screen Testing
+```typescript
+describe('ScreenName', () => {
+  describe('Rendering', () => {
+    it('should render screen correctly', () => {
+      // Test basic screen rendering
+    });
+    
+    it('should render loading states', () => {
+      // Test loading UI
+    });
+    
+    it('should render error states', () => {
+      // Test error UI
+    });
+    
+    it('should render empty states', () => {
+      // Test empty state UI
+    });
+  });
+
+  describe('Navigation', () => {
+    it('should handle navigation correctly', () => {
+      // Test screen navigation
+    });
+    
+    it('should pass correct parameters', () => {
+      // Test parameter passing
+    });
+  });
+
+  describe('User Interactions', () => {
+    it('should handle form submissions', () => {
+      // Test form interactions
+    });
+    
+    it('should handle list interactions', () => {
+      // Test list interactions
+    });
+    
+    it('should handle modal interactions', () => {
+      // Test modal interactions
+    });
+  });
+});
+```
+
+### 2. Unit Testing Requirements
+
+#### A. Business Logic Testing
+```typescript
+describe('BusinessLogic', () => {
+  describe('Data Processing', () => {
+    it('should process data correctly', () => {
+      // Test data transformation
+    });
+    
+    it('should handle edge cases', () => {
+      // Test edge case handling
+    });
+    
+    it('should validate input data', () => {
+      // Test input validation
+    });
+  });
+
+  describe('Calculations', () => {
+    it('should perform calculations correctly', () => {
+      // Test mathematical operations
+    });
+    
+    it('should handle division by zero', () => {
+      // Test error conditions
+    });
+  });
+
+  describe('State Management', () => {
+    it('should update state correctly', () => {
+      // Test state updates
+    });
+    
+    it('should handle state transitions', () => {
+      // Test state machine logic
+    });
+  });
+});
+```
+
+#### B. Utility Function Testing
+```typescript
+describe('Utility Functions', () => {
+  describe('formatDate', () => {
+    it('should format valid dates correctly', () => {
+      // Test date formatting
+    });
+    
+    it('should handle invalid dates', () => {
+      // Test error handling
+    });
+    
+    it('should handle different date formats', () => {
+      // Test format variations
+    });
+  });
+
+  describe('validation', () => {
+    it('should validate email addresses', () => {
+      // Test email validation
+    });
+    
+    it('should validate phone numbers', () => {
+      // Test phone validation
+    });
+    
+    it('should validate required fields', () => {
+      // Test required field validation
+    });
+  });
+});
+```
+
+### 3. API Layer Testing Requirements
+
+#### A. API Service Testing
+```typescript
+describe('APIService', () => {
+  describe('HTTP Methods', () => {
+    it('should make GET requests correctly', async () => {
+      // Test GET requests
+    });
+    
+    it('should make POST requests correctly', async () => {
+      // Test POST requests
+    });
+    
+    it('should make PUT requests correctly', async () => {
+      // Test PUT requests
+    });
+    
+    it('should make DELETE requests correctly', async () => {
+      // Test DELETE requests
+    });
+  });
+
+  describe('Request Configuration', () => {
+    it('should set correct headers', () => {
+      // Test header configuration
+    });
+    
+    it('should handle authentication', () => {
+      // Test auth headers
+    });
+    
+    it('should handle request timeouts', async () => {
+      // Test timeout handling
+    });
+  });
+
+  describe('Response Handling', () => {
+    it('should handle successful responses', async () => {
+      // Test success scenarios
+    });
+    
+    it('should handle error responses', async () => {
+      // Test error scenarios
+    });
+    
+    it('should handle network failures', async () => {
+      // Test network issues
+    });
+  });
+});
+```
+
+#### B. API Hook Testing
+```typescript
+describe('useAPIHook', () => {
+  describe('Data Fetching', () => {
+    it('should fetch data on mount', async () => {
+      // Test initial data fetch
+    });
+    
+    it('should handle loading states', () => {
+      // Test loading state management
+    });
+    
+    it('should handle error states', async () => {
+      // Test error state management
+    });
+  });
+
+  describe('Data Mutations', () => {
+    it('should create new resources', async () => {
+      // Test create operations
+    });
+    
+    it('should update existing resources', async () => {
+      // Test update operations
+    });
+    
+    it('should delete resources', async () => {
+      // Test delete operations
+    });
+  });
+
+  describe('Cache Management', () => {
+    it('should cache responses correctly', () => {
+      // Test caching behavior
+    });
+    
+    it('should invalidate cache on mutations', () => {
+      // Test cache invalidation
+    });
+  });
+});
+```
+
+### 4. Database Layer Testing Requirements
+
+#### A. Database Service Testing
+```typescript
+describe('DatabaseService', () => {
+  describe('CRUD Operations', () => {
+    it('should create records', async () => {
+      // Test create operations
+    });
+    
+    it('should read records', async () => {
+      // Test read operations
+    });
+    
+    it('should update records', async () => {
+      // Test update operations
+    });
+    
+    it('should delete records', async () => {
+      // Test delete operations
+    });
+  });
+
+  describe('Query Operations', () => {
+    it('should execute complex queries', async () => {
+      // Test complex queries
+    });
+    
+    it('should handle query parameters', async () => {
+      // Test parameterized queries
+    });
+    
+    it('should handle query errors', async () => {
+      // Test query error handling
+    });
+  });
+
+  describe('Transaction Management', () => {
+    it('should handle transactions correctly', async () => {
+      // Test transaction handling
+    });
+    
+    it('should rollback on errors', async () => {
+      // Test rollback scenarios
+    });
+  });
+});
+```
+
+#### B. Sync Manager Testing
+```typescript
+describe('SyncManager', () => {
+  describe('Online Sync', () => {
+    it('should sync to server when online', async () => {
+      // Test online sync
+    });
+    
+    it('should sync from server when online', async () => {
+      // Test server sync
+    });
+    
+    it('should handle sync conflicts', async () => {
+      // Test conflict resolution
+    });
+  });
+
+  describe('Offline Operations', () => {
+    it('should queue operations when offline', async () => {
+      // Test offline queuing
+    });
+    
+    it('should sync queued operations when online', async () => {
+      // Test queued sync
+    });
+  });
+
+  describe('Conflict Resolution', () => {
+    it('should resolve data conflicts', async () => {
+      // Test conflict resolution
+    });
+    
+    it('should handle merge conflicts', async () => {
+      // Test merge scenarios
+    });
+  });
+});
+```
+
+## Test Setup Requirements
+
+### 1. Mock Configuration
+```typescript
+// API Mocks
+jest.mock('../../src/api/services/APIService', () => ({
+  APIService: {
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+  },
+}));
+
+// Database Mocks
+jest.mock('../../src/db/services/DatabaseService', () => ({
+  DatabaseService: {
+    create: jest.fn(),
+    read: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    query: jest.fn(),
+  },
+}));
+
+// Navigation Mocks
+jest.mock('@react-navigation/native', () => ({
+  useNavigation: jest.fn(),
+  useRoute: jest.fn(),
+}));
+
+// Storage Mocks
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  setItem: jest.fn(),
+  getItem: jest.fn(),
+  removeItem: jest.fn(),
+}));
+```
+
+### 2. Test Utilities
+```typescript
+// Test Wrapper
+const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <NavigationContainer>
+    <Provider store={store}>
+      {children}
+    </Provider>
+  </NavigationContainer>
+);
+
+// Mock Data Factories
+const createMockUser = (overrides = {}) => ({
+  id: 1,
+  name: 'Test User',
+  email: 'test@example.com',
+  ...overrides,
+});
+
+// Test Helpers
+const renderWithProviders = (ui: React.ReactElement) => {
+  return render(ui, { wrapper: TestWrapper });
+};
+```
+
+## Test Categories by Screen Type
+
+### 1. Form Screens
+- Form validation testing
+- Form submission testing
+- Field error handling
+- Success/error responses
+
+### 2. List Screens
+- Data loading testing
+- Empty state testing
+- Item selection testing
+- Search/filter testing
+- Pagination testing
+
+### 3. Detail Screens
+- Data display testing
+- Edit functionality testing
+- Delete functionality testing
+- Related data testing
+
+### 4. Authentication Screens
+- Login/logout testing
+- Registration testing
+- Password reset testing
+- Session management testing
+
+## Integration Testing Requirements
+
+### 1. End-to-End Flows
+```typescript
+describe('User Registration Flow', () => {
+  it('should complete full registration process', async () => {
+    // Test complete user journey
+    // 1. Fill registration form
+    // 2. Submit to API
+    // 3. Save to database
+    // 4. Navigate to next screen
+  });
+});
+```
+
+### 2. Cross-Screen Navigation
+```typescript
+describe('Navigation Flow', () => {
+  it('should navigate between screens correctly', () => {
+    // Test screen transitions
+    // Test parameter passing
+    // Test back navigation
+  });
+});
+```
+
+### 3. Data Flow Testing
+```typescript
+describe('Data Flow', () => {
+  it('should sync data across screens', async () => {
+    // Test data consistency
+    // Test state management
+    // Test cache invalidation
+  });
+});
+```
+
+## Error Handling Testing
+
+### 1. API Error Scenarios
+- Network failures
+- Server errors
+- Authentication failures
+- Rate limiting
+
+### 2. Database Error Scenarios
+- Connection failures
+- Query errors
+- Constraint violations
+- Data corruption
+
+### 3. UI Error Scenarios
+- Invalid user input
+- Missing data
+- Loading timeouts
+- Permission errors
+
+## Performance Testing
+
+### 1. Component Performance
+```typescript
+it('should render within acceptable time', () => {
+  const startTime = Date.now();
+  render(<Component />);
+  const endTime = Date.now();
+  expect(endTime - startTime).toBeLessThan(100);
+});
+```
+
+### 2. API Performance
+```typescript
+it('should complete API calls within timeout', async () => {
+  const startTime = Date.now();
+  await apiCall();
+  const endTime = Date.now();
+  expect(endTime - startTime).toBeLessThan(5000);
+});
+```
+
+### 3. Database Performance
+```typescript
+it('should complete database operations quickly', async () => {
+  const startTime = Date.now();
+  await dbOperation();
+  const endTime = Date.now();
+  expect(endTime - startTime).toBeLessThan(1000);
+});
+```
+
+## Test Coverage Requirements
+
+### 1. Minimum Coverage
+- **UI Components**: 90% coverage
+- **Business Logic**: 95% coverage
+- **API Services**: 90% coverage
+- **Database Services**: 95% coverage
+- **Utility Functions**: 100% coverage
+
+### 2. Critical Path Coverage
+- **User Flows**: 100% coverage
+- **Error Handling**: 100% coverage
+- **Authentication**: 100% coverage
+- **Data Sync**: 100% coverage
+
+## Implementation Checklist
+
+### When Creating New Components/Screens:
+- [ ] Generate UI tests
+- [ ] Generate unit tests for business logic
+- [ ] Generate API integration tests
+- [ ] Generate database integration tests
+- [ ] Generate error handling tests
+- [ ] Generate performance tests
+- [ ] Ensure all tests pass
+- [ ] Achieve required coverage
+
+### When Modifying Existing Components/Screens:
+- [ ] Update existing tests
+- [ ] Add tests for new functionality
+- [ ] Ensure existing tests still pass
+- [ ] Update coverage requirements
+- [ ] Test error scenarios
+- [ ] Test performance impact
+
+## Quality Gates
+
+### Before Merging:
+- [ ] All tests pass
+- [ ] Coverage requirements met
+- [ ] Performance tests pass
+- [ ] Error handling tests pass
+- [ ] Integration tests pass
+
+### Before Deployment:
+- [ ] End-to-end tests pass
+- [ ] Cross-platform tests pass
+- [ ] Accessibility tests pass
+- [ ] Security tests pass
+
+## Usage Examples
+
+### For New Screens:
+```bash
+"Generate comprehensive tests for the new UserProfileScreen including UI, unit, API, and database testing"
+```
+
+### For Existing Screens:
+```bash
+"Update tests for OrderScreen to include new payment integration and ensure 95% coverage"
+```
+
+### For API Services:
+```bash
+"Generate unit tests for the PaymentService including all HTTP methods and error scenarios"
+```
+
+### For Database Services:
+```bash
+"Create comprehensive tests for UserDatabaseService covering CRUD operations and sync scenarios"
+```
+
+This rule ensures that every aspect of your React Native application is thoroughly tested, from UI interactions to database operations, providing confidence in your code quality and reliability.
+description:
+globs:
+alwaysApply: false
+---

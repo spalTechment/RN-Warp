@@ -1,0 +1,77 @@
+---
+description: Enforces the provider hierarchy and app root setup for all React Native projects. Ensures SafeAreaProvider, error boundaries, state management, query, theme, and navigation providers are included and ordered as per config.
+rule_type: [ARCHITECTURE_ENFORCEMENT, CONFIG_DRIVEN, APP_ROOT_SETUP]
+globs:
+  - "App.tsx"
+  - "src/App.tsx"
+alwaysApply: false
+---
+
+# App.tsx Root Component Rules
+
+## Configuration-Driven App Setup
+- ALWAYS read configuration from the active project config in `config/` directory
+- NEVER hardcode providers, navigation, or architectural choices
+- The root component in `App.tsx` MUST always be wrapped in `SafeAreaProvider` from `react-native-safe-area-context`.
+- This rule applies regardless of project configuration or platform.
+- All navigation and provider trees MUST be children of `SafeAreaProvider`.
+- The code generator MUST add `react-native-safe-area-context` to `package.json` if not already present.
+
+## Required Providers Hierarchy
+The App.tsx must establish this provider hierarchy based on configuration:
+
+```typescript
+// MANDATORY provider hierarchy
+<SafeAreaProvider>
+    <ErrorBoundary>
+      <StateManagementProvider> {/* Based on config.architecture.stateManagement */}
+        <QueryProvider> {/* Based on config.architecture.dataFetching */}
+          <ThemeProvider> {/* Based on config.design */}
+            <NavigationContainer>
+              <AppNavigator />
+            </NavigationContainer>
+          </ThemeProvider>
+        </QueryProvider>
+      </StateManagementProvider>
+    </ErrorBoundary>
+</SafeAreaProvider>
+```
+
+## Do's and Don'ts
+
+### ✅ DO's:
+- **Always wrap** root component in `SafeAreaProvider`
+- **Follow mandatory provider hierarchy** exactly as specified
+- **Read configuration** from active project config
+- **Add required dependencies** to package.json automatically
+- **Implement error boundaries** for all major components
+- **Use configured state management** from `config.architecture.stateManagement`
+- **Use configured data fetching** from `config.architecture.dataFetching`
+- **Apply theme configuration** from `config.design`
+- **Handle navigation setup** based on project configuration
+- **Add proper error handling** for provider initialization
+- **Validate provider order** matches the hierarchy
+- **Test provider integration** thoroughly
+
+### ❌ DON'Ts:
+- **Never hardcode** providers or architectural choices
+- **Don't skip** SafeAreaProvider wrapper
+- **Don't change** the provider hierarchy order
+- **Don't forget** to add required dependencies
+- **Don't ignore** error boundary implementation
+- **Don't use** providers not specified in configuration
+- **Don't skip** theme provider setup
+- **Don't ignore** navigation container setup
+- **Don't forget** to handle provider errors
+- **Don't create** incomplete provider trees
+- **Don't skip** testing provider integration
+
+This ensures consistent app initialization across all React Native projects.
+              <AppNavigator />
+            </NavigationContainer>
+          </ThemeProvider>
+        </QueryProvider>
+      </StateManagementProvider>
+    </ErrorBoundary>
+</SafeAreaProvider>
+```

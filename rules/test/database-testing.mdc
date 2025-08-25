@@ -1,0 +1,596 @@
+# Database Testing Rule for React Native
+
+## Overview
+This rule defines comprehensive database testing standards for React Native applications. It covers local database operations, data persistence, sync management, offline functionality, and database integration testing.
+
+## Test Categories
+
+### 1. Database Operations Tests
+- **CRUD Operations**: Test create, read, update, delete operations
+- **Query Operations**: Test complex queries, filtering, and sorting
+- **Transaction Management**: Test database transactions and rollbacks
+- **Data Validation**: Test data integrity and constraint enforcement
+- **Performance Testing**: Test query performance and optimization
+
+### 2. Data Persistence Tests
+- **Data Storage**: Test data saving and retrieval
+- **Data Migration**: Test schema changes and data migration
+- **Data Backup**: Test backup and restore functionality
+- **Data Cleanup**: Test data deletion and cleanup operations
+- **Storage Limits**: Test storage capacity and limits
+
+### 3. Sync Management Tests
+- **Online/Offline Sync**: Test data synchronization between local and remote
+- **Conflict Resolution**: Test data conflict detection and resolution
+- **Sync Queues**: Test sync queue management and processing
+- **Incremental Sync**: Test partial data synchronization
+- **Sync Status**: Test sync state management and monitoring
+
+### 4. Offline Functionality Tests
+- **Offline Operations**: Test database operations when offline
+- **Data Caching**: Test data caching and cache invalidation
+- **Queue Management**: Test operation queuing for later sync
+- **Offline Indicators**: Test offline state detection and UI feedback
+- **Reconnection Handling**: Test reconnection and sync recovery
+
+## Test Structure Requirements
+
+### Required Imports
+```typescript
+import { openDatabase, SQLiteDatabase } from 'react-native-sqlite-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { renderHook, waitFor } from '@testing-library/react-native';
+```
+
+### Required Test Setup
+```typescript
+describe('DatabaseService - Database Testing', () => {
+  let database: SQLiteDatabase;
+  let mockDatabase: jest.Mocked<SQLiteDatabase>;
+
+  beforeEach(async () => {
+    // Setup test database
+    database = await openDatabase({
+      name: 'test.db',
+      location: 'default',
+    });
+    
+    // Mock database operations
+    mockDatabase = {
+      executeSql: jest.fn(),
+      close: jest.fn(),
+      transaction: jest.fn(),
+    } as any;
+  });
+
+  afterEach(async () => {
+    await database.close();
+    jest.clearAllMocks();
+  });
+});
+```
+
+### Required Test Categories
+1. **Database Operations Tests** (40% of test cases)
+2. **Data Persistence Tests** (25% of test cases)
+3. **Sync Management Tests** (25% of test cases)
+4. **Offline Functionality Tests** (10% of test cases)
+
+## Test Patterns
+
+### CRUD Operations Pattern
+```typescript
+describe('CRUD Operations', () => {
+  it('should create new record', async () => {
+    const userData = { name: 'John Doe', email: 'john@example.com' };
+    const mockResult = { insertId: 1, rowsAffected: 1 };
+    
+    mockDatabase.executeSql.mockResolvedValue([mockResult, []]);
+
+    const result = await UserDatabaseService.create(userData);
+
+    expect(result).toBe(1);
+    expect(mockDatabase.executeSql).toHaveBeenCalledWith(
+      'INSERT INTO users (name, email) VALUES (?, ?)',
+      ['John Doe', 'john@example.com']
+    );
+  });
+
+  it('should read record by ID', async () => {
+    const mockUser = { id: 1, name: 'John Doe', email: 'john@example.com' };
+    const mockResult = { rows: { item: () => mockUser, length: 1 } };
+    
+    mockDatabase.executeSql.mockResolvedValue([mockResult, [mockUser]]);
+
+    const result = await UserDatabaseService.getById(1);
+
+    expect(result).toEqual(mockUser);
+    expect(mockDatabase.executeSql).toHaveBeenCalledWith(
+      'SELECT * FROM users WHERE id = ?',
+      [1]
+    );
+  });
+
+  it('should update existing record', async () => {
+    const updateData = { name: 'Updated Name' };
+    const mockResult = { rowsAffected: 1 };
+    
+    mockDatabase.executeSql.mockResolvedValue([mockResult, []]);
+
+    const result = await UserDatabaseService.update(1, updateData);
+
+    expect(result).toBe(true);
+    expect(mockDatabase.executeSql).toHaveBeenCalledWith(
+      'UPDATE users SET name = ? WHERE id = ?',
+      ['Updated Name', 1]
+    );
+  });
+
+  it('should delete record', async () => {
+    const mockResult = { rowsAffected: 1 };
+    
+    mockDatabase.executeSql.mockResolvedValue([mockResult, []]);
+
+    const result = await UserDatabaseService.delete(1);
+
+    expect(result).toBe(true);
+    expect(mockDatabase.executeSql).toHaveBeenCalledWith(
+      'DELETE FROM users WHERE id = ?',
+      [1]
+    );
+  });
+
+  it('should handle record not found', async () => {
+    const mockResult = { rowsAffected: 0 };
+    
+    mockDatabase.executeSql.mockResolvedValue([mockResult, []]);
+
+    const result = await UserDatabaseService.delete(999);
+
+    expect(result).toBe(false);
+  });
+});
+```
+
+### Query Operations Pattern
+```typescript
+describe('Query Operations', () => {
+  it('should fetch all records', async () => {
+    const mockUsers = [
+      { id: 1, name: 'User 1' },
+      { id: 2, name: 'User 2' }
+    ];
+    const mockResult = { rows: { length: 2, item: (index: number) => mockUsers[index] } };
+    
+    mockDatabase.executeSql.mockResolvedValue([mockResult, mockUsers]);
+
+    const result = await UserDatabaseService.getAll();
+
+    expect(result).toEqual(mockUsers);
+    expect(mockDatabase.executeSql).toHaveBeenCalledWith('SELECT * FROM users');
+  });
+
+  it('should fetch records with filters', async () => {
+    const mockUsers = [{ id: 1, name: 'John', email: 'john@example.com' }];
+    const mockResult = { rows: { length: 1, item: (index: number) => mockUsers[index] } };
+    
+    mockDatabase.executeSql.mockResolvedValue([mockResult, mockUsers]);
+
+    const result = await UserDatabaseService.findByEmail('john@example.com');
+
+    expect(result).toEqual(mockUsers);
+    expect(mockDatabase.executeSql).toHaveBeenCalledWith(
+      'SELECT * FROM users WHERE email = ?',
+      ['john@example.com']
+    );
+  });
+
+  it('should fetch records with pagination', async () => {
+    const mockUsers = [{ id: 1, name: 'User 1' }];
+    const mockResult = { rows: { length: 1, item: (index: number) => mockUsers[index] } };
+    
+    mockDatabase.executeSql.mockResolvedValue([mockResult, mockUsers]);
+
+    const result = await UserDatabaseService.getPaginated({ page: 1, limit: 10 });
+
+    expect(result).toEqual(mockUsers);
+    expect(mockDatabase.executeSql).toHaveBeenCalledWith(
+      'SELECT * FROM users LIMIT ? OFFSET ?',
+      [10, 0]
+    );
+  });
+
+  it('should handle complex queries', async () => {
+    const mockOrders = [{ id: 1, total: 100, status: 'completed' }];
+    const mockResult = { rows: { length: 1, item: (index: number) => mockOrders[index] } };
+    
+    mockDatabase.executeSql.mockResolvedValue([mockResult, mockOrders]);
+
+    const result = await OrderDatabaseService.getCompletedOrdersWithTotal();
+
+    expect(result).toEqual(mockOrders);
+    expect(mockDatabase.executeSql).toHaveBeenCalledWith(
+      'SELECT * FROM orders WHERE status = ? AND total > ? ORDER BY created_at DESC',
+      ['completed', 50]
+    );
+  });
+});
+```
+
+### Transaction Pattern
+```typescript
+describe('Transaction Management', () => {
+  it('should execute transaction successfully', async () => {
+    const mockTransaction = {
+      executeSql: jest.fn().mockResolvedValue([{ rowsAffected: 1 }, []]),
+      commit: jest.fn(),
+      rollback: jest.fn(),
+    };
+    
+    mockDatabase.transaction.mockImplementation((callback) => {
+      callback(mockTransaction);
+      return Promise.resolve();
+    });
+
+    await UserDatabaseService.createWithProfile({
+      user: { name: 'John', email: 'john@example.com' },
+      profile: { bio: 'Test bio' }
+    });
+
+    expect(mockTransaction.executeSql).toHaveBeenCalledTimes(2);
+    expect(mockTransaction.commit).toHaveBeenCalled();
+    expect(mockTransaction.rollback).not.toHaveBeenCalled();
+  });
+
+  it('should rollback transaction on error', async () => {
+    const mockTransaction = {
+      executeSql: jest.fn().mockRejectedValue(new Error('Database error')),
+      commit: jest.fn(),
+      rollback: jest.fn(),
+    };
+    
+    mockDatabase.transaction.mockImplementation((callback) => {
+      callback(mockTransaction);
+      return Promise.resolve();
+    });
+
+    await expect(UserDatabaseService.createWithProfile({
+      user: { name: 'John', email: 'john@example.com' },
+      profile: { bio: 'Test bio' }
+    })).rejects.toThrow('Database error');
+
+    expect(mockTransaction.rollback).toHaveBeenCalled();
+    expect(mockTransaction.commit).not.toHaveBeenCalled();
+  });
+});
+```
+
+### Sync Management Pattern
+```typescript
+describe('Sync Management', () => {
+  it('should sync data to server when online', async () => {
+    const mockUser = { id: 1, name: 'John', syncStatus: 'pending' };
+    const mockApiResponse = { success: true };
+    
+    // Mock API service
+    UserService.updateUser = jest.fn().mockResolvedValue(mockApiResponse);
+    
+    // Mock database
+    mockDatabase.executeSql.mockResolvedValue([{ rows: { item: () => mockUser } }, [mockUser]]);
+
+    const result = await SyncManager.syncToServer();
+
+    expect(result).toBe(true);
+    expect(UserService.updateUser).toHaveBeenCalledWith(1, mockUser);
+  });
+
+  it('should queue operations when offline', async () => {
+    // Mock network status
+    NetworkInfo.isConnected = jest.fn().mockReturnValue(false);
+    
+    const userData = { name: 'John', email: 'john@example.com' };
+
+    await UserDatabaseService.create(userData);
+
+    const queuedOperations = await SyncManager.getQueuedOperations();
+    expect(queuedOperations).toHaveLength(1);
+    expect(queuedOperations[0].type).toBe('CREATE');
+    expect(queuedOperations[0].data).toEqual(userData);
+  });
+
+  it('should resolve conflicts during sync', async () => {
+    const localUser = { id: 1, name: 'Local Name', version: 1 };
+    const serverUser = { id: 1, name: 'Server Name', version: 2 };
+    
+    // Mock conflict detection
+    mockDatabase.executeSql.mockResolvedValue([{ rows: { item: () => localUser } }, [localUser]]);
+    UserService.getUserById = jest.fn().mockResolvedValue(serverUser);
+
+    const result = await SyncManager.resolveConflict(1, 'user');
+
+    expect(result).toBe('server'); // Server version wins
+    expect(mockDatabase.executeSql).toHaveBeenCalledWith(
+      'UPDATE users SET name = ?, version = ? WHERE id = ?',
+      ['Server Name', 2, 1]
+    );
+  });
+
+  it('should handle sync errors gracefully', async () => {
+    UserService.updateUser = jest.fn().mockRejectedValue(new Error('Network error'));
+    
+    const mockUser = { id: 1, name: 'John', syncStatus: 'pending' };
+    mockDatabase.executeSql.mockResolvedValue([{ rows: { item: () => mockUser } }, [mockUser]]);
+
+    const result = await SyncManager.syncToServer();
+
+    expect(result).toBe(false);
+    // Verify user is marked for retry
+    expect(mockDatabase.executeSql).toHaveBeenCalledWith(
+      'UPDATE users SET sync_status = ? WHERE id = ?',
+      ['retry', 1]
+    );
+  });
+});
+```
+
+### Offline Functionality Pattern
+```typescript
+describe('Offline Functionality', () => {
+  it('should work offline', async () => {
+    // Mock offline state
+    NetworkInfo.isConnected = jest.fn().mockReturnValue(false);
+    
+    const userData = { name: 'John', email: 'john@example.com' };
+    const mockResult = { insertId: 1, rowsAffected: 1 };
+    
+    mockDatabase.executeSql.mockResolvedValue([mockResult, []]);
+
+    const result = await UserDatabaseService.create(userData);
+
+    expect(result).toBe(1);
+    // Verify operation is queued for later sync
+    const queuedOperations = await SyncManager.getQueuedOperations();
+    expect(queuedOperations).toHaveLength(1);
+  });
+
+  it('should cache data for offline access', async () => {
+    const mockUsers = [{ id: 1, name: 'John' }];
+    const mockResult = { rows: { length: 1, item: (index: number) => mockUsers[index] } };
+    
+    mockDatabase.executeSql.mockResolvedValue([mockResult, mockUsers]);
+
+    await UserDatabaseService.cacheUsers(mockUsers);
+
+    const cachedUsers = await UserDatabaseService.getCachedUsers();
+    expect(cachedUsers).toEqual(mockUsers);
+  });
+
+  it('should handle cache invalidation', async () => {
+    const mockUsers = [{ id: 1, name: 'John' }];
+    
+    // Cache users
+    mockDatabase.executeSql.mockResolvedValue([{ rowsAffected: 1 }, []]);
+    await UserDatabaseService.cacheUsers(mockUsers);
+
+    // Invalidate cache
+    await UserDatabaseService.invalidateCache();
+
+    const cachedUsers = await UserDatabaseService.getCachedUsers();
+    expect(cachedUsers).toEqual([]);
+  });
+
+  it('should reconnect and sync when back online', async () => {
+    // Mock reconnection
+    NetworkInfo.isConnected = jest.fn()
+      .mockReturnValueOnce(false)  // Initially offline
+      .mockReturnValue(true);      // Then online
+    
+    const mockUser = { id: 1, name: 'John', syncStatus: 'pending' };
+    mockDatabase.executeSql.mockResolvedValue([{ rows: { item: () => mockUser } }, [mockUser]]);
+    UserService.updateUser = jest.fn().mockResolvedValue({ success: true });
+
+    await SyncManager.handleReconnection();
+
+    expect(UserService.updateUser).toHaveBeenCalled();
+    expect(mockDatabase.executeSql).toHaveBeenCalledWith(
+      'UPDATE users SET sync_status = ? WHERE id = ?',
+      ['synced', 1]
+    );
+  });
+});
+```
+
+## Service-Specific Patterns
+
+### User Database Service Pattern
+```typescript
+describe('UserDatabaseService Tests', () => {
+  it('should create user with profile', async () => {
+    const userData = { name: 'John', email: 'john@example.com' };
+    const profileData = { bio: 'Test bio', avatar: 'avatar.jpg' };
+    
+    const mockTransaction = {
+      executeSql: jest.fn().mockResolvedValue([{ insertId: 1, rowsAffected: 1 }, []]),
+      commit: jest.fn(),
+      rollback: jest.fn(),
+    };
+    
+    mockDatabase.transaction.mockImplementation((callback) => {
+      callback(mockTransaction);
+      return Promise.resolve();
+    });
+
+    const result = await UserDatabaseService.createWithProfile(userData, profileData);
+
+    expect(result).toBe(1);
+    expect(mockTransaction.executeSql).toHaveBeenCalledTimes(2);
+  });
+
+  it('should search users by name', async () => {
+    const mockUsers = [{ id: 1, name: 'John Doe' }];
+    const mockResult = { rows: { length: 1, item: (index: number) => mockUsers[index] } };
+    
+    mockDatabase.executeSql.mockResolvedValue([mockResult, mockUsers]);
+
+    const result = await UserDatabaseService.searchByName('John');
+
+    expect(result).toEqual(mockUsers);
+    expect(mockDatabase.executeSql).toHaveBeenCalledWith(
+      'SELECT * FROM users WHERE name LIKE ? ORDER BY name ASC',
+      ['%John%']
+    );
+  });
+});
+```
+
+### Order Database Service Pattern
+```typescript
+describe('OrderDatabaseService Tests', () => {
+  it('should calculate order statistics', async () => {
+    const mockStats = { total: 1000, count: 10, average: 100 };
+    const mockResult = { rows: { item: () => mockStats } };
+    
+    mockDatabase.executeSql.mockResolvedValue([mockResult, [mockStats]]);
+
+    const result = await OrderDatabaseService.getOrderStatistics();
+
+    expect(result).toEqual(mockStats);
+    expect(mockDatabase.executeSql).toHaveBeenCalledWith(
+      'SELECT SUM(total) as total, COUNT(*) as count, AVG(total) as average FROM orders'
+    );
+  });
+
+  it('should get orders by date range', async () => {
+    const startDate = '2023-01-01';
+    const endDate = '2023-12-31';
+    const mockOrders = [{ id: 1, total: 100, created_at: '2023-06-15' }];
+    const mockResult = { rows: { length: 1, item: (index: number) => mockOrders[index] } };
+    
+    mockDatabase.executeSql.mockResolvedValue([mockResult, mockOrders]);
+
+    const result = await OrderDatabaseService.getOrdersByDateRange(startDate, endDate);
+
+    expect(result).toEqual(mockOrders);
+    expect(mockDatabase.executeSql).toHaveBeenCalledWith(
+      'SELECT * FROM orders WHERE created_at BETWEEN ? AND ? ORDER BY created_at DESC',
+      [startDate, endDate]
+    );
+  });
+});
+```
+
+## Quality Standards
+
+### Coverage Requirements
+- **Minimum 90% line coverage** for database service functions
+- **100% coverage** for transaction management
+- **100% coverage** for error handling paths
+- **100% coverage** for sync operations
+
+### Performance Requirements
+- **Query execution time < 100ms** for simple queries
+- **Query execution time < 500ms** for complex queries
+- **Transaction completion time < 1 second**
+- **Sync operation time < 5 seconds**
+
+### Data Integrity Requirements
+- **Foreign key constraints** must be enforced
+- **Data validation** must be performed
+- **Transaction rollback** on errors
+- **Data consistency** across operations
+
+## Test Utilities
+
+### Database Mock Generators
+```typescript
+const createMockDatabaseResult = (data: any[], rowsAffected = 1) => ({
+  rows: {
+    length: data.length,
+    item: (index: number) => data[index],
+    raw: () => data
+  },
+  rowsAffected,
+  insertId: data.length > 0 ? data[0].id : undefined
+});
+
+const createMockTransaction = () => ({
+  executeSql: jest.fn(),
+  commit: jest.fn(),
+  rollback: jest.fn(),
+});
+
+const mockDatabaseError = (error: string) => {
+  mockDatabase.executeSql.mockRejectedValue(new Error(error));
+};
+```
+
+### Test Helpers
+```typescript
+const waitForDatabaseOperation = async (callback: () => void) => {
+  await waitFor(callback, { timeout: 3000 });
+};
+
+const setupTestDatabase = async () => {
+  const db = await openDatabase({
+    name: 'test.db',
+    location: 'default',
+  });
+  
+  // Create test tables
+  await db.executeSql(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  
+  return db;
+};
+
+const cleanupTestDatabase = async (db: SQLiteDatabase) => {
+  await db.executeSql('DROP TABLE IF EXISTS users');
+  await db.close();
+};
+```
+
+## Best Practices
+
+### DO's
+- **Mock database operations** to isolate tests
+- **Test all CRUD operations** thoroughly
+- **Test transaction rollbacks** and error scenarios
+- **Test sync operations** and conflict resolution
+- **Test offline functionality** and queue management
+- **Use realistic test data** that matches production schema
+
+### DON'Ts
+- **Don't use production database** in tests
+- **Don't test database engine behavior** directly
+- **Don't ignore transaction testing**
+- **Don't skip sync testing**
+- **Don't test implementation details** that don't affect data integrity
+
+## Integration with Other Rules
+
+### With UI Testing Rule
+- Database tests focus on data persistence and operations
+- UI tests focus on user interactions and data display
+- Database tests can provide test data for UI tests
+
+### With API Testing Rule
+- Database tests focus on local data operations
+- API tests focus on remote data communication
+- Database tests can test data synchronization logic
+
+### With Unit Testing Rule
+- Database tests focus on data layer operations
+- Unit tests focus on business logic and data processing
+- Database tests can test data transformation logic
+
+This rule ensures comprehensive database testing that works with any React Native project and can be used independently or in combination with other testing rules.
+description:
+globs:
+alwaysApply: false
+---

@@ -1,0 +1,111 @@
+# Basic Navigation Setup
+
+## Use Case
+Simple apps with basic screen-to-screen navigation using stack navigator.
+
+## Configuration Structure
+```json
+{
+  "navigation": {
+    "type": "stack",
+    "screens": ["Home", "Detail"],
+    "initialScreen": "Home",
+    "headerShown": true
+  },
+  "dependencies": {
+    "required": [
+      "@react-navigation/native",
+      "@react-navigation/stack",
+      "react-native-screens",
+      "react-native-safe-area-context"
+    ]
+  }
+}
+```
+
+## Required Dependencies
+```bash
+npm install @react-navigation/native @react-navigation/stack react-native-screens react-native-safe-area-context
+```
+
+## File Structure
+```
+src/
+├── navigation/
+│   ├── types.ts
+│   └── AppNavigator.tsx
+├── screens/
+│   ├── HomeScreen.tsx
+│   └── DetailScreen.tsx
+└── App.tsx
+```
+
+## Implementation Steps
+
+### 1. Navigation Types
+Create `src/navigation/types.ts` with:
+- `RootStackParamList` (Home, Detail with params)
+
+### 2. App Navigator
+Create `src/navigation/AppNavigator.tsx` with:
+- Stack navigator configuration
+- Screen registration
+- Header options
+
+### 3. Screen Components
+Create placeholder screens in `src/screens/`:
+- `HomeScreen.tsx`
+- `DetailScreen.tsx`
+
+### 4. App.tsx
+Configure with:
+- NavigationContainer
+- AppNavigator integration
+
+## Screen Template
+```tsx
+// Template for all screens
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { StackScreenProps } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/types';
+
+type Props = StackScreenProps<RootStackParamList, '[ScreenName]'>;
+
+const [ScreenName]Screen: React.FC<Props> = ({ navigation, route }) => {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>[ScreenName] Screen</Text>
+      <Text style={styles.subtitle}>Add your UI here</Text>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+  },
+});
+
+export default [ScreenName]Screen;
+```
+
+## Key Rules
+- Always use TypeScript for navigation types
+- Use functional components with proper props typing
+- Keep navigator files under 50 lines
+- Use descriptive screen names in param lists
+- Handle navigation errors gracefully
+- Follow the file structure exactly as defined

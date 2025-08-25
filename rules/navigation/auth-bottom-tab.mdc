@@ -1,0 +1,346 @@
+# Auth + Bottom Tab Navigation - Universal Config-Driven
+
+## Use Case
+Authentication flow + bottom tab navigation. Reads from `config/*-project-config.json`.
+
+## Dependencies
+```bash
+npm install @react-navigation/native @react-navigation/stack @react-navigation/bottom-tabs react-native-gesture-handler react-native-reanimated react-native-safe-area-context
+```
+
+## Required Config
+```json
+{
+  "navigation": {
+    "type": "auth-bottom-tab",
+    "auth": {
+      "screens": ["[YourAuthScreens]"],
+      "initialScreen": "[YourInitialAuthScreen]",
+      "flow": {
+        "[ScreenName]": {
+          "onSuccess": "[NextScreen]",
+          "component": "[ComponentName]"
+        }
+      }
+    },
+    "main": {
+      "type": "bottom-tabs",
+      "screens": ["[YourMainScreens]"],
+      "initialScreen": "[YourInitialMainScreen]",
+      "tabConfig": {
+        "headerShown": true,
+        "tabBarActiveTintColor": "[YourActiveColor]",
+        "tabBarInactiveTintColor": "[YourInactiveColor]",
+        "tabBarStyle": {
+          "backgroundColor": "[YourBackgroundColor]"
+        }
+      }
+    },
+    "splash": {
+      "enabled": true,
+      "duration": 2000,
+      "component": "SplashScreen"
+    }
+  }
+}
+```
+
+## Implementation
+
+### 1. Navigation Types
+```typescript
+import { config } from '../../config/*-project-config.json';
+
+type AuthScreens = typeof config.navigation.auth.screens[number];
+type MainScreens = typeof config.navigation.main.screens[number];
+
+export type RootStackParamList = { Splash: undefined; Auth: undefined; Main: undefined; };
+export type AuthStackParamList = { [K in AuthScreens]: undefined; };
+export type MainTabParamList = { [K in MainScreens]: undefined; };
+```
+
+### 2. AppNavigator.tsx
+```typescript
+import React, { useState, useEffect } from 'react';
+import { createStackNavigator } from '@react-navigation/stack';
+import { config } from '../../config/*-project-config.json';
+import { useAuth } from '../context/AuthContext';
+import AuthNavigator from './AuthNavigator';
+import MainTabNavigator from './MainTabNavigator';
+import SplashScreen from '../screens/splash/SplashScreen';
+
+const Stack = createStackNavigator();
+
+const AppNavigator = () => {
+  const { isAuthenticated } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    if (config.navigation.splash.enabled) {
+      setTimeout(() => setIsLoading(false), config.navigation.splash.duration);
+    } else {
+      setIsLoading(false);
+    }
+  }, []);
+
+  if (isLoading) return <SplashScreen />;
+
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {!isAuthenticated ? (
+        <Stack.Screen name="Auth" component={AuthNavigator} />
+      ) : (
+        <Stack.Screen name="Main" component={MainTabNavigator} />
+      )}
+    </Stack.Navigator>
+  );
+};
+
+export default AppNavigator;
+```
+
+### 3. AuthNavigator.tsx
+```typescript
+import React from 'react';
+import { createStackNavigator } from '@react-navigation/stack';
+import { config } from '../../config/*-project-config.json';
+
+const Stack = createStackNavigator();
+
+const AuthNavigator = () => {
+  const { auth } = config.navigation;
+  
+  return (
+    <Stack.Navigator initialRouteName={auth.initialScreen} screenOptions={{ headerShown: false }}>
+      {auth.screens.map(screenName => {
+        const screenConfig = auth.flow[screenName];
+        const Component = require(`../screens/auth/${screenConfig.component}`).default;
+        return <Stack.Screen key={screenName} name={screenName} component={Component} />;
+      })}
+    </Stack.Navigator>
+  );
+};
+
+export default AuthNavigator;
+```
+
+### 4. MainTabNavigator.tsx
+```typescript
+import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { config } from '../../config/*-project-config.json';
+
+const Tab = createBottomTabNavigator();
+
+const MainTabNavigator = () => {
+  const { main } = config.navigation;
+  
+  return (
+    <Tab.Navigator
+      initialRouteName={main.initialScreen}
+      screenOptions={main.tabConfig}
+    >
+      {main.screens.map(screenName => {
+        const Component = require(`../screens/main/${screenName}Screen`).default;
+        return (
+          <Tab.Screen 
+            key={screenName}
+            name={screenName} 
+            component={Component}
+            options={{
+              title: screenName.replace(/([A-Z])/g, ' $1').trim(),
+              tabBarIcon: ({ focused, color, size }) => {
+                // Add your icon logic here based on screenName
+                return null; // Replace with actual icon component
+              }
+            }}
+          />
+        );
+      })}
+    </Tab.Navigator>
+  );
+};
+
+export default MainTabNavigator;
+```
+
+### 5. Screen Templates
+
+**Auth Screen:**
+```typescript
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { StackScreenProps } from '@react-navigation/stack';
+import { AuthStackParamList } from '../../navigation/types';
+import { config } from '../../../config/*-project-config.json';
+
+type Props = StackScreenProps<AuthStackParamList, '[ScreenName]'>;
+
+const [ScreenName]Screen: React.FC<Props> = ({ navigation, route }) => {
+  const handleSuccess = () => {
+    const nextScreen = config.navigation.auth.flow['[ScreenName]'].onSuccess;
+    if (nextScreen === 'MainTab') {
+      // Handle transition to main app
+    } else {
+      navigation.navigate(nextScreen as keyof AuthStackParamList);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>[ScreenName] Screen</Text>
+      <TouchableOpacity style={styles.button} onPress={handleSuccess}>
+        <Text style={styles.buttonText}>Continue</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
+  button: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
+  buttonText: { fontSize: 16, fontWeight: '600' },
+});
+
+export default [ScreenName]Screen;
+```
+
+**Main Screen:**
+```typescript
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { MainTabParamList } from '../../navigation/types';
+
+type Props = BottomTabScreenProps<MainTabParamList, '[ScreenName]'>;
+
+const [ScreenName]Screen: React.FC<Props> = ({ navigation, route }) => {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>[ScreenName] Screen</Text>
+      <Text style={styles.subtitle}>Add your content here</Text>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 10 },
+  subtitle: { fontSize: 16 },
+});
+
+export default [ScreenName]Screen;
+```
+
+### 6. App.tsx (CRITICAL - All providers required)
+```typescript
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import 'react-native-gesture-handler';
+import { AuthProvider } from './src/context/AuthContext';
+import AppNavigator from './src/navigation/AppNavigator';
+
+const App = () => (
+  <GestureHandlerRootView style={{ flex: 1 }}>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <NavigationContainer>
+          <AppNavigator />
+        </NavigationContainer>
+      </AuthProvider>
+    </SafeAreaProvider>
+  </GestureHandlerRootView>
+);
+
+export default App;
+```
+
+### 7. AuthContext.tsx
+```typescript
+import React, { createContext, useContext, useState } from 'react';
+
+interface AuthContextType {
+  isAuthenticated: boolean;
+  login: (credentials: any) => Promise<void>;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  return context;
+};
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const login = async (credentials: any) => setIsAuthenticated(true);
+  const logout = () => setIsAuthenticated(false);
+
+  return (
+    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+```
+
+## Platform Setup
+
+### Android (android/app/build.gradle)
+```gradle
+dependencies {
+    implementation 'com.facebook.react:react-native-gesture-handler:2.x.x'
+}
+```
+
+### iOS (ios/Podfile)
+```ruby
+pod 'RNGestureHandler', :path => '../node_modules/react-native-gesture-handler'
+pod 'RNSafeAreaContext', :path => '../node_modules/react-native-safe-area-context'
+```
+
+## Key Rules
+
+### ✅ DO's:
+- **Read navigation config** from `config/*-project-config.json`
+- **Generate types dynamically** from config arrays
+- **Create screens dynamically** based on config.screens arrays
+- **Use config.flow** for navigation between auth screens
+- **Follow config.fileStructure** for file organization
+- **Use config.design** for styling and theming
+- **ALWAYS wrap App.tsx in SafeAreaProvider and GestureHandlerRootView**
+- **Import 'react-native-gesture-handler' at the top of App.tsx**
+- **Add tab bar icons** for each screen in MainTabNavigator
+
+### ❌ DON'Ts:
+- **Never hardcode screen names** in navigation files
+- **Don't assume screen order** - always use config
+- **Don't create screens** not defined in config
+- **Don't hardcode navigation logic** - use config.flow
+- **Don't hardcode colors or styling** - use config.design
+- **Don't forget SafeAreaProvider** - required for proper layout
+- **Don't forget GestureHandlerRootView** - required for gesture handling
+- **Don't forget tab bar icons** - required for bottom tabs
+
+## Critical Provider Order
+```
+GestureHandlerRootView
+  └── SafeAreaProvider
+      └── AuthProvider
+          └── NavigationContainer
+              └── AppNavigator
+```
+
+## Usage
+1. **Define screens** in `config/*-project-config.json`
+2. **Create screen components** using templates above
+3. **Add tab bar icons** for each main screen
+4. **Rule automatically** generates navigation for all screens
+5. **No rule modifications needed** - just update config!
+
+This rule is **completely universal** and works with any React Native project! 🚀

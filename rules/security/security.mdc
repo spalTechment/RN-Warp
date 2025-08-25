@@ -1,0 +1,354 @@
+# React Native Security Rules - TypeScript Project
+
+## Overview
+These security rules enforce best practices for React Native TypeScript applications, covering authentication, data protection, API security, and mobile-specific security concerns. All security implementations must follow OWASP guidelines and industry standards.
+
+## Authentication & Authorization Security
+
+### User Authentication
+- **NEVER store sensitive credentials** in AsyncStorage, localStorage, or any unencrypted storage
+- **ALWAYS use secure token storage** (Keychain for iOS, Keystore for Android)
+- **IMPLEMENT proper session management** with token expiration and refresh logic
+- **VALIDATE all user inputs** before authentication requests
+- **USE HTTPS only** for all authentication endpoints
+- **IMPLEMENT rate limiting** for login attempts
+- **ADD biometric authentication** when available (Touch ID, Face ID, Fingerprint)
+
+### Token Management
+```typescript
+// ✅ CORRECT: Secure token storage
+import { Keychain } from 'react-native-keychain';
+
+const storeToken = async (token: string) => {
+  await Keychain.setInternetCredentials('auth_token', 'user', token);
+};
+
+// ❌ WRONG: Insecure storage
+AsyncStorage.setItem('auth_token', token);
+```
+
+### Authorization Checks
+- **ALWAYS verify user permissions** before accessing protected resources
+- **IMPLEMENT role-based access control** (RBAC) for different user types
+- **CHECK authentication status** on app resume and navigation
+- **VALIDATE user sessions** before sensitive operations
+
+## Data Protection & Privacy
+
+### Sensitive Data Handling
+- **NEVER log sensitive information** (passwords, tokens, personal data)
+- **ENCRYPT sensitive data** before storing locally
+- **USE secure random generation** for tokens and keys
+- **IMPLEMENT data minimization** - only collect necessary data
+- **PROVIDE clear privacy policies** and user consent mechanisms
+
+### Local Storage Security
+```typescript
+// ✅ CORRECT: Encrypted storage
+import { encrypt, decrypt } from 'react-native-crypto';
+
+const storeSensitiveData = async (data: string) => {
+  const encrypted = await encrypt(data, encryptionKey);
+  await AsyncStorage.setItem('encrypted_data', encrypted);
+};
+
+// ❌ WRONG: Plain text storage
+AsyncStorage.setItem('user_data', JSON.stringify(sensitiveData));
+```
+
+### Data Transmission
+- **ALWAYS use HTTPS/TLS** for all network communications
+- **IMPLEMENT certificate pinning** to prevent MITM attacks
+- **VALIDATE SSL certificates** on all API calls
+- **USE secure WebSocket connections** (WSS) when needed
+
+## API Security
+
+### Request Security
+- **ALWAYS include authentication headers** in API requests
+- **IMPLEMENT request signing** for sensitive operations
+- **USE proper HTTP methods** (GET for read, POST/PUT/DELETE for write)
+- **VALIDATE all API responses** before processing
+- **IMPLEMENT request timeouts** to prevent hanging connections
+
+### API Client Security
+```typescript
+// ✅ CORRECT: Secure API client
+const apiClient = axios.create({
+  baseURL: 'https://api.example.com',
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+apiClient.interceptors.request.use((config) => {
+  const token = await getAuthToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// ❌ WRONG: Insecure API calls
+fetch('http://api.example.com/data'); // No HTTPS, no auth
+```
+
+### Error Handling
+- **NEVER expose sensitive information** in error messages
+- **IMPLEMENT proper error logging** without sensitive data
+- **HANDLE network errors** gracefully with user-friendly messages
+- **VALIDATE error responses** before displaying to users
+
+## Input Validation & Sanitization
+
+### User Input Validation
+- **VALIDATE all user inputs** on both client and server side
+- **SANITIZE data** before processing or storing
+- **IMPLEMENT input length limits** to prevent buffer overflow
+- **USE TypeScript types** for compile-time validation
+- **VALIDATE file uploads** (type, size, content)
+
+### Form Security
+```typescript
+// ✅ CORRECT: Input validation
+import * as yup from 'yup';
+
+const loginSchema = yup.object({
+  email: yup.string().email().required(),
+  password: yup.string().min(8).required(),
+});
+
+const validateLogin = async (data: LoginData) => {
+  return await loginSchema.validate(data);
+};
+
+// ❌ WRONG: No validation
+const handleLogin = (email: string, password: string) => {
+  // Direct use without validation
+  login(email, password);
+};
+```
+
+## Mobile-Specific Security
+
+### Platform Security
+- **IMPLEMENT platform-specific security** features
+- **USE secure storage APIs** (Keychain/Keystore)
+- **HANDLE app state changes** securely (background/foreground)
+- **IMPLEMENT app lock** for sensitive screens
+- **USE secure random generation** for mobile-specific features
+
+### App Permissions
+- **REQUEST only necessary permissions** from users
+- **EXPLAIN why permissions are needed** before requesting
+- **HANDLE permission denials** gracefully
+- **IMPLEMENT permission checks** before using features
+- **RESPECT user privacy choices**
+
+### Deep Linking Security
+- **VALIDATE all deep link URLs** before processing
+- **IMPLEMENT URL scheme validation** to prevent malicious links
+- **SANITIZE deep link parameters** before use
+- **HANDLE invalid deep links** gracefully
+
+## Code Security
+
+### Secure Coding Practices
+- **NEVER use eval()** or similar dynamic code execution
+- **AVOID inline styles** that could contain malicious code
+- **USE Content Security Policy** for WebView components
+- **IMPLEMENT proper error boundaries** to prevent crashes
+- **VALIDATE all external data** before use
+
+### Dependency Security
+- **REGULARLY update dependencies** to patch security vulnerabilities
+- **USE npm audit** to check for known vulnerabilities
+- **IMPLEMENT dependency scanning** in CI/CD pipeline
+- **AVOID deprecated or unmaintained packages**
+- **VERIFY package integrity** before installation
+
+### Code Obfuscation
+- **ENABLE code obfuscation** for production builds
+- **PROTECT sensitive business logic** from reverse engineering
+- **USE ProGuard/R8** for Android builds
+- **IMPLEMENT anti-tampering checks** for critical features
+
+## Network Security
+
+### SSL/TLS Configuration
+- **ENFORCE minimum TLS version** (1.2 or higher)
+- **IMPLEMENT certificate pinning** for critical endpoints
+- **VALIDATE certificate chains** properly
+- **HANDLE certificate errors** appropriately
+
+### Network Monitoring
+- **IMPLEMENT network security monitoring** for suspicious activity
+- **LOG network requests** for debugging (without sensitive data)
+- **DETECT and handle** network anomalies
+- **IMPLEMENT retry logic** with exponential backoff
+
+## Error Handling & Logging
+
+### Secure Error Handling
+```typescript
+// ✅ CORRECT: Secure error handling
+const handleApiError = (error: any) => {
+  if (error.response?.status === 401) {
+    // Handle unauthorized - redirect to login
+    navigateToLogin();
+  } else {
+    // Log error without sensitive data
+    console.error('API Error:', {
+      status: error.response?.status,
+      message: 'Request failed',
+      timestamp: new Date().toISOString(),
+    });
+    
+    // Show user-friendly message
+    showError('Something went wrong. Please try again.');
+  }
+};
+
+// ❌ WRONG: Exposing sensitive data
+console.error('API Error:', error.response?.data); // May contain sensitive info
+```
+
+### Logging Security
+- **NEVER log sensitive information** (passwords, tokens, personal data)
+- **IMPLEMENT structured logging** with appropriate log levels
+- **ROTATE log files** regularly
+- **SECURE log storage** and transmission
+- **IMPLEMENT log monitoring** for security events
+
+## Testing & Validation
+
+### Security Testing
+- **IMPLEMENT security unit tests** for critical functions
+- **TEST authentication flows** thoroughly
+- **VALIDATE input sanitization** with various inputs
+- **TEST error handling** for security scenarios
+- **IMPLEMENT penetration testing** for critical features
+
+### Code Review Security
+- **REVIEW all security-related code** thoroughly
+- **VALIDATE authentication implementations** before deployment
+- **CHECK for common vulnerabilities** (SQL injection, XSS, etc.)
+- **VERIFY secure coding practices** are followed
+- **TEST security features** in different environments
+
+## Configuration Security
+
+### Environment Configuration
+- **NEVER commit sensitive configuration** to version control
+- **USE environment variables** for sensitive settings
+- **IMPLEMENT configuration validation** on app startup
+- **SECURE configuration storage** in production
+- **VALIDATE configuration values** before use
+
+### API Configuration
+```typescript
+// ✅ CORRECT: Environment-based configuration
+const API_CONFIG = {
+  baseURL: process.env.API_BASE_URL || 'https://api.example.com',
+  timeout: parseInt(process.env.API_TIMEOUT || '10000'),
+  retryAttempts: parseInt(process.env.API_RETRY_ATTEMPTS || '3'),
+};
+
+// ❌ WRONG: Hardcoded sensitive values
+const API_CONFIG = {
+  baseURL: 'https://api.example.com',
+  apiKey: 'hardcoded-secret-key', // Never do this
+};
+```
+
+## Incident Response
+
+### Security Incident Handling
+- **IMPLEMENT security incident response** procedures
+- **LOG security events** for investigation
+- **HAVE user notification procedures** for data breaches
+- **IMPLEMENT account lockout** for suspicious activity
+- **HAVE rollback procedures** for security issues
+
+### Monitoring & Alerting
+- **MONITOR authentication failures** and suspicious patterns
+- **IMPLEMENT real-time alerting** for security events
+- **TRACK API usage patterns** for anomalies
+- **MONITOR app crash reports** for security-related issues
+- **IMPLEMENT user activity monitoring** for fraud detection
+
+## Compliance & Legal
+
+### Data Protection Compliance
+- **IMPLEMENT GDPR compliance** if applicable
+- **RESPECT user privacy rights** (right to be forgotten, data portability)
+- **MAINTAIN data processing records** as required
+- **IMPLEMENT consent management** for data collection
+- **PROVIDE clear privacy notices** to users
+
+### Audit & Documentation
+- **MAINTAIN security documentation** for all features
+- **DOCUMENT security decisions** and trade-offs
+- **IMPLEMENT security audit trails** for critical operations
+- **MAINTAIN incident response documentation**
+- **REGULARLY review and update** security policies
+
+## Implementation Checklist
+
+### Before Production Deployment:
+- [ ] All authentication flows tested
+- [ ] Input validation implemented
+- [ ] Error handling secure
+- [ ] HTTPS enforced for all endpoints
+- [ ] Sensitive data encrypted
+- [ ] Dependencies updated and audited
+- [ ] Code obfuscation enabled
+- [ ] Security testing completed
+- [ ] Privacy policy updated
+- [ ] Incident response plan ready
+
+### Regular Security Maintenance:
+- [ ] Dependency vulnerability scanning
+- [ ] Security patch updates
+- [ ] Authentication flow testing
+- [ ] Penetration testing
+- [ ] Security documentation updates
+- [ ] User privacy review
+- [ ] Compliance audit
+- [ ] Security training updates
+
+## Security Tools & Libraries
+
+### Recommended Security Libraries
+- **react-native-keychain**: Secure credential storage
+- **react-native-crypto**: Encryption utilities
+- **react-native-ssl-pinning**: Certificate pinning
+- **react-native-biometrics**: Biometric authentication
+- **react-native-device-info**: Device security checks
+
+### Security Testing Tools
+- **npm audit**: Dependency vulnerability scanning
+- **OWASP ZAP**: Security testing
+- **Burp Suite**: API security testing
+- **MobSF**: Mobile app security analysis
+- **Detox**: E2E security testing
+
+## Emergency Security Procedures
+
+### Immediate Actions for Security Breaches:
+1. **ISOLATE affected systems** immediately
+2. **NOTIFY security team** and stakeholders
+3. **PRESERVE evidence** for investigation
+4. **IMPLEMENT emergency patches** if needed
+5. **NOTIFY affected users** as required by law
+6. **DOCUMENT incident** thoroughly
+7. **REVIEW and update** security measures
+
+### Contact Information:
+- **Security Team**: security@company.com
+- **Emergency Hotline**: +1-XXX-XXX-XXXX
+- **Legal Team**: legal@company.com
+- **Privacy Officer**: privacy@company.com
+
+This security framework ensures comprehensive protection for React Native applications while maintaining usability and performance.

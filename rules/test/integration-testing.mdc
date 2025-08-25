@@ -1,0 +1,659 @@
+# Integration Testing Rule for React Native
+
+## Overview
+This rule defines comprehensive integration testing standards for React Native applications. It covers end-to-end user flows, cross-component integration, system-wide testing, and real-world usage scenarios.
+
+## Test Categories
+
+### 1. End-to-End User Flow Tests
+- **Complete User Journeys**: Test full user workflows from start to finish
+- **Multi-Screen Navigation**: Test navigation between multiple screens
+- **Data Flow Integration**: Test data passing between components and services
+- **User Action Sequences**: Test sequences of user interactions
+- **Business Process Validation**: Test complete business processes
+
+### 2. Cross-Component Integration Tests
+- **Component Communication**: Test component-to-component data flow
+- **Context Integration**: Test context providers and consumers
+- **Hook Integration**: Test custom hooks with multiple components
+- **Service Integration**: Test service layer integration with components
+- **State Management Integration**: Test state flow across components
+
+### 3. System Integration Tests
+- **API-Database Integration**: Test API and database layer integration
+- **Authentication Flow**: Test complete authentication and authorization
+- **Data Synchronization**: Test data sync between local and remote
+- **Error Handling Integration**: Test error propagation across layers
+- **Performance Integration**: Test system-wide performance
+
+### 4. Real-World Scenario Tests
+- **Offline-Online Transitions**: Test app behavior during connectivity changes
+- **Concurrent Operations**: Test multiple simultaneous operations
+- **Memory Management**: Test memory usage and cleanup
+- **Background-Foreground**: Test app state transitions
+- **Deep Linking**: Test deep link handling and navigation
+
+## Test Structure Requirements
+
+### Required Imports
+```typescript
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from '../context/AuthContext';
+import { ThemeProvider } from '../context/ThemeContext';
+```
+
+### Required Test Setup
+```typescript
+describe('Integration Tests', () => {
+  let queryClient: QueryClient;
+
+  beforeEach(() => {
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+  });
+
+  afterEach(() => {
+    queryClient.clear();
+    jest.clearAllMocks();
+  });
+});
+```
+
+### Required Test Categories
+1. **End-to-End User Flow Tests** (40% of test cases)
+2. **Cross-Component Integration Tests** (30% of test cases)
+3. **System Integration Tests** (20% of test cases)
+4. **Real-World Scenario Tests** (10% of test cases)
+
+## Test Patterns
+
+### End-to-End User Flow Pattern
+```typescript
+describe('User Registration Flow', () => {
+  const TestApp = () => (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AuthProvider>
+          <NavigationContainer>
+            <AppNavigator />
+          </NavigationContainer>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+
+  it('should complete full user registration flow', async () => {
+    // Mock API responses
+    mockAxios.onPost('/api/auth/register').reply(201, {
+      user: { id: 1, name: 'John Doe', email: 'john@example.com' },
+      token: 'jwt-token'
+    });
+    mockAxios.onGet('/api/users/profile').reply(200, {
+      user: { id: 1, name: 'John Doe', email: 'john@example.com' }
+    });
+
+    const { getByTestId, getByText } = render(<TestApp />);
+
+    // 1. Navigate to registration screen
+    fireEvent.press(getByTestId('register-button'));
+
+    // 2. Fill registration form
+    fireEvent.changeText(getByTestId('name-input'), 'John Doe');
+    fireEvent.changeText(getByTestId('email-input'), 'john@example.com');
+    fireEvent.changeText(getByTestId('password-input'), 'password123');
+
+    // 3. Submit registration
+    fireEvent.press(getByTestId('submit-button'));
+
+    // 4. Verify successful registration
+    await waitFor(() => {
+      expect(getByText('Welcome, John Doe!')).toBeTruthy();
+    });
+
+    // 5. Verify user is authenticated
+    expect(getByTestId('user-profile')).toBeTruthy();
+    expect(getByText('john@example.com')).toBeTruthy();
+  });
+
+  it('should handle registration errors gracefully', async () => {
+    mockAxios.onPost('/api/auth/register').reply(400, {
+      message: 'Email already exists'
+    });
+
+    const { getByTestId, getByText } = render(<TestApp />);
+
+    // Navigate to registration
+    fireEvent.press(getByTestId('register-button'));
+
+    // Fill form with existing email
+    fireEvent.changeText(getByTestId('name-input'), 'John Doe');
+    fireEvent.changeText(getByTestId('email-input'), 'existing@example.com');
+    fireEvent.changeText(getByTestId('password-input'), 'password123');
+
+    // Submit registration
+    fireEvent.press(getByTestId('submit-button'));
+
+    // Verify error handling
+    await waitFor(() => {
+      expect(getByText('Email already exists')).toBeTruthy();
+    });
+
+    // Verify user remains on registration screen
+    expect(getByTestId('register-form')).toBeTruthy();
+  });
+});
+```
+
+### Cross-Component Integration Pattern
+```typescript
+describe('Component Integration', () => {
+  it('should integrate user profile with settings', async () => {
+    const mockUser = { id: 1, name: 'John Doe', email: 'john@example.com' };
+    mockAxios.onGet('/api/users/profile').reply(200, { user: mockUser });
+
+    const { getByTestId, getByText } = render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <UserProfileScreen />
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+
+    // Verify profile loads
+    await waitFor(() => {
+      expect(getByText('John Doe')).toBeTruthy();
+    });
+
+    // Navigate to settings
+    fireEvent.press(getByTestId('settings-button'));
+
+    // Verify settings component receives user data
+    expect(getByTestId('user-settings')).toBeTruthy();
+    expect(getByText('john@example.com')).toBeTruthy();
+
+    // Update settings
+    fireEvent.changeText(getByTestId('name-input'), 'Jane Doe');
+    fireEvent.press(getByTestId('save-button'));
+
+    // Verify profile updates
+    await waitFor(() => {
+      expect(getByText('Jane Doe')).toBeTruthy();
+    });
+  });
+
+  it('should integrate search with results display', async () => {
+    const mockResults = [
+      { id: 1, name: 'Product 1', price: 100 },
+      { id: 2, name: 'Product 2', price: 200 }
+    ];
+    mockAxios.onGet('/api/products/search?q=product').reply(200, { products: mockResults });
+
+    const { getByTestId, getByText } = render(
+      <QueryClientProvider client={queryClient}>
+        <SearchScreen />
+      </QueryClientProvider>
+    );
+
+    // Perform search
+    fireEvent.changeText(getByTestId('search-input'), 'product');
+    fireEvent.press(getByTestId('search-button'));
+
+    // Verify results display
+    await waitFor(() => {
+      expect(getByText('Product 1')).toBeTruthy();
+      expect(getByText('Product 2')).toBeTruthy();
+    });
+
+    // Select a product
+    fireEvent.press(getByTestId('product-1'));
+
+    // Verify navigation to product details
+    expect(getByTestId('product-details')).toBeTruthy();
+    expect(getByText('Product 1')).toBeTruthy();
+    expect(getByText('$100')).toBeTruthy();
+  });
+});
+```
+
+### System Integration Pattern
+```typescript
+describe('System Integration', () => {
+  it('should integrate API with database operations', async () => {
+    const mockUser = { id: 1, name: 'John Doe', email: 'john@example.com' };
+    
+    // Mock API response
+    mockAxios.onGet('/api/users/1').reply(200, { user: mockUser });
+    
+    // Mock database operations
+    mockDatabase.executeSql.mockResolvedValue([
+      { rows: { item: () => mockUser, length: 1 } },
+      [mockUser]
+    ]);
+
+    const { getByTestId, getByText } = render(
+      <QueryClientProvider client={queryClient}>
+        <UserProfileScreen userId={1} />
+      </QueryClientProvider>
+    );
+
+    // Verify API call is made
+    await waitFor(() => {
+      expect(mockAxios.history.get[0].url).toBe('/api/users/1');
+    });
+
+    // Verify data is cached in database
+    expect(mockDatabase.executeSql).toHaveBeenCalledWith(
+      'INSERT OR REPLACE INTO users (id, name, email) VALUES (?, ?, ?)',
+      [1, 'John Doe', 'john@example.com']
+    );
+
+    // Verify UI displays data
+    expect(getByText('John Doe')).toBeTruthy();
+  });
+
+  it('should handle authentication flow integration', async () => {
+    const credentials = { email: 'john@example.com', password: 'password' };
+    const authResponse = {
+      user: { id: 1, name: 'John Doe', email: 'john@example.com' },
+      token: 'jwt-token'
+    };
+
+    // Mock login API
+    mockAxios.onPost('/api/auth/login').reply(200, authResponse);
+    
+    // Mock token storage
+    AsyncStorage.setItem = jest.fn().mockResolvedValue(undefined);
+
+    const { getByTestId, getByText } = render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <LoginScreen />
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+
+    // Fill login form
+    fireEvent.changeText(getByTestId('email-input'), 'john@example.com');
+    fireEvent.changeText(getByTestId('password-input'), 'password');
+
+    // Submit login
+    fireEvent.press(getByTestId('login-button'));
+
+    // Verify authentication flow
+    await waitFor(() => {
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('authToken', 'jwt-token');
+    });
+
+    // Verify user is authenticated
+    expect(getByText('Welcome, John Doe!')).toBeTruthy();
+  });
+});
+```
+
+### Real-World Scenario Pattern
+```typescript
+describe('Real-World Scenarios', () => {
+  it('should handle offline-online transitions', async () => {
+    const mockUser = { id: 1, name: 'John Doe' };
+    
+    // Mock network status changes
+    NetworkInfo.isConnected = jest.fn()
+      .mockReturnValueOnce(true)   // Initially online
+      .mockReturnValueOnce(false)  // Then offline
+      .mockReturnValueOnce(true);  // Then online again
+
+    const { getByTestId, getByText } = render(
+      <QueryClientProvider client={queryClient}>
+        <UserProfileScreen />
+      </QueryClientProvider>
+    );
+
+    // Initially online - fetch from API
+    mockAxios.onGet('/api/users/1').reply(200, { user: mockUser });
+    
+    await waitFor(() => {
+      expect(getByText('John Doe')).toBeTruthy();
+    });
+
+    // Go offline - should use cached data
+    fireEvent.press(getByTestId('refresh-button'));
+
+    // Verify offline indicator
+    expect(getByText('Offline Mode')).toBeTruthy();
+
+    // Come back online - should sync
+    mockAxios.onPost('/api/users/1').reply(200, { success: true });
+    
+    await waitFor(() => {
+      expect(getByText('Online')).toBeTruthy();
+    });
+  });
+
+  it('should handle concurrent operations', async () => {
+    const { getByTestId, getByText } = render(
+      <QueryClientProvider client={queryClient}>
+        <OrderScreen />
+      </QueryClientProvider>
+    );
+
+    // Start multiple operations simultaneously
+    fireEvent.press(getByTestId('add-to-cart-1'));
+    fireEvent.press(getByTestId('add-to-cart-2'));
+    fireEvent.press(getByTestId('add-to-cart-3'));
+
+    // Verify all operations complete
+    await waitFor(() => {
+      expect(getByText('3 items in cart')).toBeTruthy();
+    });
+
+    // Verify no race conditions
+    expect(getByTestId('cart-total')).toHaveTextContent('$300');
+  });
+
+  it('should handle deep linking', async () => {
+    const mockProduct = { id: 1, name: 'Product 1', price: 100 };
+    mockAxios.onGet('/api/products/1').reply(200, { product: mockProduct });
+
+    // Simulate deep link
+    const deepLink = 'myapp://product/1';
+    
+    const { getByTestId, getByText } = render(
+      <QueryClientProvider client={queryClient}>
+        <NavigationContainer linking={{
+          prefixes: ['myapp://'],
+          config: {
+            screens: {
+              ProductDetails: 'product/:id'
+            }
+          }
+        }}>
+          <AppNavigator />
+        </NavigationContainer>
+      </QueryClientProvider>
+    );
+
+    // Handle deep link
+    fireEvent(getByTestId('deep-link-handler'), 'url', deepLink);
+
+    // Verify navigation to product details
+    await waitFor(() => {
+      expect(getByTestId('product-details')).toBeTruthy();
+      expect(getByText('Product 1')).toBeTruthy();
+    });
+  });
+});
+```
+
+## Flow-Specific Patterns
+
+### E-commerce Flow Pattern
+```typescript
+describe('E-commerce Flow Integration', () => {
+  it('should complete full purchase flow', async () => {
+    const mockProducts = [
+      { id: 1, name: 'Product 1', price: 100, stock: 5 },
+      { id: 2, name: 'Product 2', price: 200, stock: 3 }
+    ];
+    const mockUser = { id: 1, name: 'John Doe', email: 'john@example.com' };
+
+    // Mock API responses
+    mockAxios.onGet('/api/products').reply(200, { products: mockProducts });
+    mockAxios.onGet('/api/users/profile').reply(200, { user: mockUser });
+    mockAxios.onPost('/api/orders').reply(201, { orderId: 123 });
+
+    const { getByTestId, getByText } = render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <EcommerceApp />
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+
+    // 1. Browse products
+    await waitFor(() => {
+      expect(getByText('Product 1')).toBeTruthy();
+      expect(getByText('Product 2')).toBeTruthy();
+    });
+
+    // 2. Add products to cart
+    fireEvent.press(getByTestId('add-to-cart-1'));
+    fireEvent.press(getByTestId('add-to-cart-2'));
+
+    // 3. View cart
+    fireEvent.press(getByTestId('cart-button'));
+
+    // 4. Verify cart contents
+    expect(getByText('2 items')).toBeTruthy();
+    expect(getByText('$300')).toBeTruthy();
+
+    // 5. Proceed to checkout
+    fireEvent.press(getByTestId('checkout-button'));
+
+    // 6. Fill shipping information
+    fireEvent.changeText(getByTestId('address-input'), '123 Main St');
+    fireEvent.changeText(getByTestId('city-input'), 'New York');
+
+    // 7. Complete purchase
+    fireEvent.press(getByTestId('place-order-button'));
+
+    // 8. Verify order confirmation
+    await waitFor(() => {
+      expect(getByText('Order #123 confirmed')).toBeTruthy();
+    });
+  });
+});
+```
+
+### Social Media Flow Pattern
+```typescript
+describe('Social Media Flow Integration', () => {
+  it('should complete post creation and interaction flow', async () => {
+    const mockUser = { id: 1, name: 'John Doe' };
+    const mockPosts = [
+      { id: 1, content: 'Hello World', author: mockUser, likes: 5 }
+    ];
+
+    // Mock API responses
+    mockAxios.onGet('/api/posts').reply(200, { posts: mockPosts });
+    mockAxios.onPost('/api/posts').reply(201, { post: { id: 2, content: 'New Post' } });
+    mockAxios.onPost('/api/posts/1/like').reply(200, { likes: 6 });
+
+    const { getByTestId, getByText } = render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <SocialMediaApp />
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+
+    // 1. View feed
+    await waitFor(() => {
+      expect(getByText('Hello World')).toBeTruthy();
+    });
+
+    // 2. Create new post
+    fireEvent.changeText(getByTestId('post-input'), 'New Post');
+    fireEvent.press(getByTestId('post-button'));
+
+    // 3. Verify post appears in feed
+    await waitFor(() => {
+      expect(getByText('New Post')).toBeTruthy();
+    });
+
+    // 4. Like a post
+    fireEvent.press(getByTestId('like-button-1'));
+
+    // 5. Verify like count updates
+    await waitFor(() => {
+      expect(getByText('6 likes')).toBeTruthy();
+    });
+  });
+});
+```
+
+## Quality Standards
+
+### Coverage Requirements
+- **Minimum 80% line coverage** for integration test scenarios
+- **100% coverage** for critical user flows
+- **100% coverage** for error handling integration
+- **100% coverage** for authentication flows
+
+### Performance Requirements
+- **Test execution time < 30 seconds** for complete flows
+- **Component integration time < 5 seconds**
+- **API integration time < 10 seconds**
+- **Database integration time < 5 seconds**
+
+### Reliability Requirements
+- **Flaky test rate < 5%** for integration tests
+- **Consistent test results** across environments
+- **Proper cleanup** after each test
+- **Isolated test environments**
+
+## Test Utilities
+
+### Integration Test Helpers
+```typescript
+const createTestApp = (overrides = {}) => {
+  const defaultProviders = {
+    queryClient: new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    }),
+    theme: defaultTheme,
+    auth: { user: null, isAuthenticated: false },
+  };
+
+  const providers = { ...defaultProviders, ...overrides };
+
+  return (
+    <QueryClientProvider client={providers.queryClient}>
+      <ThemeProvider theme={providers.theme}>
+        <AuthProvider initialState={providers.auth}>
+          <NavigationContainer>
+            <AppNavigator />
+          </NavigationContainer>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+};
+
+const waitForNavigation = async (screenName: string) => {
+  await waitFor(() => {
+    expect(screen.getByTestId(screenName)).toBeTruthy();
+  }, { timeout: 5000 });
+};
+
+const simulateUserFlow = async (flow: Array<{ action: string; data?: any }>) => {
+  for (const step of flow) {
+    switch (step.action) {
+      case 'navigate':
+        fireEvent.press(screen.getByTestId(step.data.buttonId));
+        break;
+      case 'input':
+        fireEvent.changeText(screen.getByTestId(step.data.inputId), step.data.value);
+        break;
+      case 'press':
+        fireEvent.press(screen.getByTestId(step.data.buttonId));
+        break;
+      case 'wait':
+        await waitFor(() => {
+          expect(screen.getByText(step.data.text)).toBeTruthy();
+        });
+        break;
+    }
+  }
+};
+```
+
+### Mock Integration Helpers
+```typescript
+const mockCompleteFlow = (flowConfig: any) => {
+  // Mock all API calls for a complete flow
+  Object.entries(flowConfig.apiCalls).forEach(([endpoint, response]) => {
+    mockAxios.onAny(endpoint).reply(200, response);
+  });
+
+  // Mock all database operations
+  Object.entries(flowConfig.dbOperations).forEach(([operation, result]) => {
+    mockDatabase.executeSql.mockResolvedValue(result);
+  });
+};
+
+const setupIntegrationTest = async (config: any) => {
+  // Setup test environment
+  await AsyncStorage.clear();
+  
+  // Mock network status
+  NetworkInfo.isConnected = jest.fn().mockReturnValue(true);
+  
+  // Setup API mocks
+  if (config.apiMocks) {
+    Object.entries(config.apiMocks).forEach(([endpoint, response]) => {
+      mockAxios.onAny(endpoint).reply(200, response);
+    });
+  }
+  
+  // Setup database mocks
+  if (config.dbMocks) {
+    Object.entries(config.dbMocks).forEach(([operation, result]) => {
+      mockDatabase.executeSql.mockResolvedValue(result);
+    });
+  }
+};
+```
+
+## Best Practices
+
+### DO's
+- **Test complete user journeys** from start to finish
+- **Test cross-component communication** thoroughly
+- **Test system-wide integration** between layers
+- **Test real-world scenarios** and edge cases
+- **Use realistic test data** that matches production
+- **Test error handling** across the entire system
+
+### DON'Ts
+- **Don't test individual components** in isolation
+- **Don't ignore error scenarios** in integration tests
+- **Don't skip authentication flows**
+- **Don't test implementation details** that don't affect user experience
+- **Don't create flaky tests** with timing dependencies
+
+## Integration with Other Rules
+
+### With UI Testing Rule
+- Integration tests focus on complete user flows
+- UI tests focus on individual component behavior
+- Integration tests can use UI test patterns for component interactions
+
+### With Unit Testing Rule
+- Integration tests focus on system-wide behavior
+- Unit tests focus on individual function behavior
+- Integration tests can use unit test patterns for specific logic
+
+### With API Testing Rule
+- Integration tests focus on end-to-end API usage
+- API tests focus on individual API endpoints
+- Integration tests can use API test patterns for service integration
+
+### With Database Testing Rule
+- Integration tests focus on data flow across the system
+- Database tests focus on individual database operations
+- Integration tests can use database test patterns for data persistence
+
+This rule ensures comprehensive integration testing that works with any React Native project and can be used independently or in combination with other testing rules.
+description:
+globs:
+alwaysApply: false
+---

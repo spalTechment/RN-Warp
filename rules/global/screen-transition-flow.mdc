@@ -1,0 +1,80 @@
+---
+description: Enforces configuration-driven screen transition flow for React Native apps. All navigation logic, transitions, authentication checks, and global actions must be implemented strictly according to config.screenFlow. Ensures every screen and navigation handler matches the defined flow, including splash timing, auth routing, quick actions, and error handling.
+rule_type: [CONFIG_DRIVEN, ARCHITECTURE_ENFORCEMENT, FLOW_CONTROL, NAVIGATION_LOGIC]
+globs:
+  - "**/screens/**/*"
+  - "**/*.tsx"
+  - "**/*.ts"
+  - "config/*.json"
+alwaysApply: false
+---
+
+# Screen Transition Flow Rules
+
+## Configuration-Driven Screen Flow
+- The complete screen transition flow MUST be defined in `config.screenFlow` section
+- All screen transitions, navigation logic, and conditional flows MUST be implemented based on this configuration
+- The screen flow configuration MUST include:
+  - Initial screen and duration (for Splash screens)
+  - Authentication checks and routing logic
+  - Screen-to-screen navigation mappings
+  - Quick actions and deep navigation paths
+  - Global actions (logout, back navigation, etc.)
+
+## Screen Flow Implementation Requirements
+- The navigation structure MUST implement all transitions defined in `config.screenFlow.transitions`
+- Authentication flow MUST follow the logic in `config.screenFlow.authenticated/unauthenticated` paths
+- Each screen MUST implement the navigation actions defined for it in the flow config
+- Global actions (logout, back) MUST be available from any screen as defined in `config.screenFlow.globalActions`
+
+## Screen Component Requirements
+- Each screen component MUST include navigation handlers for all actions defined in its flow config
+- Buttons, links, and interactive elements MUST be connected to their corresponding navigation actions
+- Authentication state checks MUST be implemented as specified in the flow config
+- Loading states and transitions MUST match the durations specified in the config
+
+## Navigation Implementation Pattern
+- Use `useNavigation()` hook for all screen transitions
+- Implement navigation actions as functions within each screen component
+- Handle authentication state using global state (Redux/Context) as specified
+- Implement proper error handling for failed navigation attempts
+
+## Do's and Don'ts
+
+### ✅ DO's:
+- **Define complete screen flow** in `config.screenFlow`
+- **Implement all transitions** defined in configuration
+- **Use exact screen names** from config
+- **Implement authentication checks** as specified
+- **Add navigation handlers** for all defined actions
+- **Handle loading states** for timed transitions
+- **Implement global actions** (logout, back navigation)
+- **Use useNavigation() hook** for all transitions
+- **Handle authentication state** properly
+- **Add error handling** for navigation failures
+- **Test all navigation paths** thoroughly
+- **Validate screen flow** against configuration
+
+### ❌ DON'Ts:
+- **Never hardcode** navigation logic
+- **Don't skip** authentication checks
+- **Don't ignore** loading states for transitions
+- **Don't forget** error handling for navigation failures
+- **Don't create** navigation flows not defined in config
+- **Don't skip** global action implementation
+- **Don't ignore** screen flow validation
+- **Don't forget** to test navigation paths
+- **Don't create** incomplete navigation handlers
+- **Don't skip** authentication state management
+
+This ensures consistent navigation behavior across all screens and proper flow implementation.
+- Each screen component MUST include navigation handlers for all actions defined in its flow config
+- Buttons, links, and interactive elements MUST be connected to their corresponding navigation actions
+- Authentication state checks MUST be implemented as specified in the flow config
+- Loading states and transitions MUST match the durations specified in the config
+
+## Navigation Implementation Pattern
+- Use `useNavigation()` hook for all screen transitions
+- Implement navigation actions as functions within each screen component
+- Handle authentication state using global state (Redux/Context) as specified
+- Implement proper error handling for failed navigation attempts

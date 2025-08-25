@@ -1,0 +1,163 @@
+---
+description: Coding standards and best practices for all code in the project. Enforces consistent formatting, naming conventions, and code quality across the codebase.
+rule_type: [CODING_STANDARDS, LINTING, BEST_PRACTICES]
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+alwaysApply: true
+---
+
+# React Native Coding Standards - Config-Driven
+
+## Overview
+These coding standards apply to React Native projects and should reference the active project configuration defined in `config/*.json` files for all project-specific conventions.
+
+## Naming Conventions
+
+### Files and Directories
+- **Components**: PascalCase (e.g., `UserProfile.tsx`, `ProductCard.tsx`)
+- **Files**: camelCase for utilities (e.g., `formatDate.ts`, `apiClient.ts`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `API_BASE_URL`, `MAX_RETRY_ATTEMPTS`)
+- **Directories**: Follow config-specified naming pattern from `config.fileStructure`
+
+### Variables and Functions
+- **Variables**: camelCase (e.g., `userProfile`, `orderItems`)
+- **Functions**: camelCase (e.g., `getUserById`, `calculateTotal`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `DEFAULT_TIMEOUT`, `API_ENDPOINTS`)
+- **Enums**: PascalCase (e.g., `OrderStatus`, `UserRole`)
+
+## Code Organization
+
+### Import Organization
+1. React and React Native imports
+2. Third-party library imports (based on `config.architecture` choices)
+3. Internal imports (using configured file structure paths from `config.fileStructure`)
+4. Type imports (separate from value imports)
+
+### File Structure Adherence
+- All file paths must resolve from `config.fileStructure` definitions
+- Use configured directories for their intended purposes:
+  - `config.fileStructure.api` - API services and endpoints
+  - `config.fileStructure.components` - Reusable UI components
+  - `config.fileStructure.screens` - Screen components
+  - `config.fileStructure.utils` - Utility functions (if configured)
+  - `config.fileStructure.types` - TypeScript type definitions
+  - etc.
+
+## Code Quality Standards
+
+### Function Design
+- **Single Responsibility**: Each function should have one clear purpose
+- **Pure Functions**: Prefer pure functions when possible
+- **Function Length**: Keep functions under 50 lines when possible
+- **Parameter Count**: Limit functions to 5 parameters or fewer
+
+### Error Handling
+- Use configuration-based error reporting
+- Implement error boundaries for all screen components
+- Apply environment-specific error handling based on `config.environments`
+- Log errors according to environment configuration
+
+### Performance Guidelines
+- Optimize based on configured features from `config.features.enabled`
+- Use lazy loading for screens defined in `config.navigation.screens`
+- Implement performance monitoring if enabled in configuration
+- Follow configuration for analytics and crash reporting
+
+### Comments and Documentation
+- Write self-documenting code
+- Add comments for complex business logic
+- Document API integrations referencing `config.api.documentation`
+- Include JSDoc comments for public functions
+
+## Configuration Integration
+
+### Environment Variables
+- Use environment-specific settings from `config.environments`
+- Reference `config.environments[env].apiUrl` for API base URLs
+- Apply debug settings from `config.environments[env].debug`
+
+### Feature Flags
+- Only implement features listed in `config.features.enabled`
+- Request permissions defined in `config.features.permissions`
+- Conditional implementation based on configuration
+
+### Design System Integration
+- Use `config.design.colors` for all color references
+- Apply `config.design.typography` for text styling
+- Use `config.design.spacing` for consistent layout
+- Reference `config.design.borderRadius` and `config.design.shadows`
+
+## Best Practices
+
+### Component Design
+- Create reusable components in `config.fileStructure.components`
+- Use composition over inheritance
+- Implement proper prop validation
+- Follow the design system from configuration
+
+### State Management
+- Use the library specified in `config.architecture.stateManagement`
+- Implement data fetching with `config.architecture.dataFetching` strategy
+- Use HTTP client specified in `config.architecture.httpClient`
+
+### Testing
+- Mirror the configured file structure in tests
+- Test data models defined in `config.dataModels`
+- Test API endpoints defined in `config.api.endpoints`
+- Test navigation flows defined in `config.navigation.screens`
+
+### Platform-Specific Code
+- Use `.ios.ts` and `.android.ts` extensions when needed
+- Keep platform differences minimal
+- Use `Platform.select()` for conditional rendering
+- Follow configuration for platform-specific settings
+
+## Do's and Don'ts
+
+### ✅ DO's:
+- **Always reference** `config/*.json` files for project-specific conventions
+- **Use PascalCase** for components (e.g., `UserProfile.tsx`)
+- **Use camelCase** for utilities and functions (e.g., `formatDate.ts`, `getUserById`)
+- **Use UPPER_SNAKE_CASE** for constants (e.g., `API_BASE_URL`)
+- **Organize imports** in order: React/RN → Third-party → Internal → Types
+- **Follow single responsibility** principle for functions
+- **Keep functions under 50 lines** when possible
+- **Limit parameters to 5 or fewer**
+- **Write self-documenting code** with clear naming
+- **Add JSDoc comments** for public functions
+- **Use TypeScript** for type safety throughout the project
+- **Implement error boundaries** for all major components
+- **Follow naming conventions** consistently across the project
+- **Document complex logic** with clear comments
+- **Validate user inputs** and show appropriate feedback
+
+### ❌ DON'Ts:
+- **Never hardcode** project-specific values
+- **Don't mix** resource models and app/global types in same file
+- **Don't exceed 50 lines** per function without good reason
+- **Don't use more than 5 parameters** per function
+- **Don't skip error handling** for async operations
+- **Don't ignore TypeScript types** and interfaces
+- **Don't use inline styles** in render methods
+- **Don't create untested** or incomplete features
+- **Don't ignore performance** considerations
+- **Don't forget to handle** user feedback and edge cases
+- **Don't scatter related files** across different directories
+- **Don't ignore project conventions** and standards
+- **Don't skip error handling** or validation
+- **Don't create components** that don't render properly
+
+This approach ensures coding standards remain consistent while adapting to the specific project configuration.
+
+- **Don't create untested** or incomplete features
+- **Don't ignore performance** considerations
+- **Don't forget to handle** user feedback and edge cases
+- **Don't scatter related files** across different directories
+- **Don't ignore project conventions** and standards
+- **Don't skip error handling** or validation
+- **Don't create components** that don't render properly
+
+This approach ensures coding standards remain consistent while adapting to the specific project configuration.

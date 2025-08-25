@@ -1,0 +1,130 @@
+---
+description: UI Design System rules for React Native applications. Configuration-driven design tokens, component standards, and theming system. Uses config.design for all visual properties including colors, spacing, typography, and responsive design patterns.
+globs:
+  - "**/*.tsx"
+  - "**/*.ts"
+  - "**/components/**/*"
+  - "**/theme/**/*"
+  - "**/design/**/*"
+alwaysApply: false
+---
+
+# UI Design System Rules
+
+## Configuration-Driven Design
+ALWAYS read design configuration from `config.design`
+NEVER hardcode colors, spacing, typography, or design values
+Support theme switching if multiple themes configured
+
+## Color Management Rules
+- **Always check** `color.ts` (design tokens file) for existing color codes before using any color
+- **If required color is not available**, add it to the `color.ts` file first, then use it
+- **Never hardcode** color values directly in components
+- **Use color references** from the design tokens file for all color usage
+- **Maintain color consistency** across the entire application
+
+## String Management Rules
+- **No inline strings** should be written directly in components
+- **All strings must be** added to a constants file (e.g., `strings.ts`, `constants.ts`)
+- **Use string references** via imports from the constants file
+- **Maintain string consistency** and enable easy localization
+- **Group strings by feature** or screen in the constants file
+
+## Color Palette
+- Use colors from `config.design.colors`.NEVER hardcode color values.
+- primary: `config.design.colors.primary` (main brand color)
+- secondary: `config.design.colors.secondary` (accent color)
+- success: `config.design.colors.success`
+- warning: `config.design.colors.warning`
+- error:  `config.design.colors.error`
+- background: `config.design.colors.background` (fallback to #F8F9FA), 
+- surface: `config.design.colors.surface` (fallback to #FFFFFF)
+- textPrimary: `config.design.colors.text` || `config.design.colors.textPrimary` || `config.design.colors.neutral`
+- border: `config.design.colors.border` || `config.design.colors.neutral`, 
+- info: `config.design.colors.info`
+
+## Typography
+- Use typography settings from `config.design.typography`
+- Reference font files from `${config.fileStructure.constants}/fonts.ts`
+- **Font Family**: `config.design.typography.fontFamily.primary` (fallback to 'System')
+- **Font Sizes**: Use `config.design.typography.fontSize.*` or `config.design.typography.*` based on structure
+- `Proper contrast ratios using config colors for accessibility`
+
+## Image Loading Rules
+- Use image caching wherever possible (e.g., "react-native-fast-image", or default Image)
+
+## Animation
+- Use animation libraries (e.g., `react-native-reanimated`, `react-native-animatable`, or Animated API).
+- Animation durations/easing should be configurable via `config.design` if possible.
+- Use motion to enhance, not distract.
+
+## Accessibility
+- All interactive elements must have `accessibilityLabel`, `accessibilityRole`, and proper hit slop.
+- Ensure color contrast meets WCAG AA/AAA using `config.design.colors`.
+- All screens/components must be screen reader compatible.
+- Test accessibility before release.
+
+## Responsiveness
+- Use responsive units and breakpoints from `config.design` if available.
+- Support all device sizes and orientations.
+- Avoid hardcoded sizes; use flexbox and spacing tokens.
+
+## Performance Optimization Rules
+- Use StyleSheet.create() for style optimization
+- Avoid inline styles in render methods
+- Cache computed styles using useMemo
+- Implement proper key props for FlatList items
+- Minimize nested view hierarchy
+
+## Do's and Don'ts
+
+### ✅ DO's:
+- **Always use** colors from `config.design.colors`
+- **Check color.ts file** for existing colors before using any color
+- **Add new colors** to color.ts file if not available
+- **Use string constants** from constants file for all text
+- **Reference typography** from `config.design.typography`
+- **Use spacing tokens** from `config.design.spacing`
+- **Apply border radius** from `config.design.borderRadius`
+- **Use shadows** from `config.design.shadows`
+- **Implement accessibility** features (labels, roles, contrast)
+- **Use StyleSheet.create()** for optimization
+- **Support responsive design** with flexbox
+- **Test accessibility** before release
+- **Use proper contrast ratios** for text and backgrounds
+- **Implement screen reader** compatibility
+- **Cache computed styles** with useMemo
+- **Use proper key props** for list items
+- **Minimize view hierarchy** for performance
+- **Group strings by feature** in constants file
+- **Maintain color consistency** across the app
+
+### ❌ DON'Ts:
+- **Never hardcode** colors, spacing, or design values
+- **Don't ignore** accessibility requirements
+- **Don't use inline styles** in render methods
+- **Don't create components** without proper contrast ratios
+- **Don't skip** screen reader compatibility
+- **Don't forget** to test accessibility
+- **Don't ignore** performance optimization
+- **Don't use hardcoded** sizes or dimensions
+- **Don't skip** responsive design considerations
+- **Don't create** inaccessible components
+- **Don't ignore** color contrast requirements
+- **Don't forget** to optimize for performance
+- **Don't write strings** directly inline in components
+- **Don't skip** checking color.ts file for existing colors
+- **Don't hardcode** color values in components
+- **Don't ignore** string consistency across the app
+
+This ensures consistent, accessible, and maintainable UI design across all components with proper color and string management.
+
+- Support all device sizes and orientations.
+- Avoid hardcoded sizes; use flexbox and spacing tokens.
+
+## Performance Optimization Rules
+- Use StyleSheet.create() for style optimization
+- Avoid inline styles in render methods
+- Cache computed styles using useMemo
+- Implement proper key props for FlatList items
+- Minimize nested view hierarchy

@@ -1,0 +1,196 @@
+# Navigation Troubleshooting Guide
+
+## Common Issues and Solutions
+
+### 1. Navigation Container Missing Error
+**Error**: "Couldn't find a navigation object. Is your component inside a NavigationContainer?"
+
+**Solution**:
+```tsx
+// App.tsx - Ensure NavigationContainer wraps everything
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import YourNavigator from './src/navigation/YourNavigator';
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <YourNavigator />
+    </NavigationContainer>
+  );
+}
+```
+
+### 2. Multiple Navigation Containers Error
+**Error**: "Multiple navigation containers found"
+
+**Solution**: Remove nested NavigationContainers
+```tsx
+// ❌ Wrong
+<NavigationContainer>
+  <Stack.Navigator>
+    <Stack.Screen name="Drawer" component={
+      <NavigationContainer> {/* Remove this */}
+        <Drawer.Navigator />
+      </NavigationContainer>
+    } />
+  </Stack.Navigator>
+</NavigationContainer>
+
+// ✅ Correct
+<NavigationContainer>
+  <Stack.Navigator>
+    <Stack.Screen name="Drawer" component={DrawerNavigator} />
+  </Stack.Navigator>
+</NavigationContainer>
+```
+
+### 3. TypeScript Navigation Errors
+**Error**: "Property 'navigate' does not exist on type 'NavigationProp'"
+
+**Solution**: Use proper typing
+```tsx
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+
+type NavigationProp = StackNavigationProp<YourParamList>;
+
+const navigation = useNavigation<NavigationProp>();
+```
+
+### 4. Drawer Not Opening on Android
+**Issue**: Drawer gestures not working on Android
+
+**Solution**:
+```tsx
+// 1. Import gesture handler first in App.tsx
+import 'react-native-gesture-handler';
+
+// 2. Add to android/app/build.gradle
+dependencies {
+    implementation 'com.facebook.react:react-native-gesture-handler:2.x.x'
+}
+
+// 3. Add to ios/Podfile
+pod 'RNGestureHandler', :path => '../node_modules/react-native-gesture-handler'
+
+// 4. Clean and rebuild
+cd android && ./gradlew clean
+cd ios && pod install
+```
+
+### 5. Screen Not Found Error
+**Error**: "The screen 'ScreenName' is not registered within the navigator"
+
+**Solution**: Check screen registration
+```tsx
+// Ensure screen is properly registered
+<Stack.Navigator>
+  <Stack.Screen name="ScreenName" component={ScreenComponent} />
+</Stack.Navigator>
+```
+
+### 6. Navigation Props Type Errors
+**Error**: "Type 'undefined' is not assignable to parameter of type..."
+
+**Solution**: Use proper screen props
+```tsx
+import { StackScreenProps } from '@react-navigation/stack';
+
+type Props = StackScreenProps<YourParamList, 'ScreenName'>;
+
+const Screen: React.FC<Props> = ({ navigation, route }) => {
+  // Use navigation and route safely
+};
+```
+
+### 7. Tab Bar Not Showing
+**Issue**: Bottom tab bar is not visible
+
+**Solution**: Check tab navigator configuration
+```tsx
+<Tab.Navigator
+  screenOptions={{
+    headerShown: false, // or true
+    tabBarStyle: {
+      backgroundColor: '#fff',
+      borderTopWidth: 1,
+    },
+  }}
+>
+  {/* Tab screens */}
+</Tab.Navigator>
+```
+
+### 8. Performance Issues
+**Issue**: Slow navigation transitions
+
+**Solution**: Optimize navigation
+```tsx
+// 1. Use React.memo for screens
+const Screen = React.memo(() => {
+  return <View />;
+});
+
+// 2. Use proper screen options
+screenOptions={{
+  unmountOnBlur: true, // For tabs
+  freezeOnBlur: true,  // For performance
+}}
+```
+
+## Debugging Steps
+
+### 1. Check Dependencies
+```bash
+# Verify all navigation packages are installed
+npm list @react-navigation/native
+npm list @react-navigation/stack
+npm list @react-navigation/drawer
+npm list @react-navigation/bottom-tabs
+npm list react-native-gesture-handler
+```
+
+### 2. Clean Build
+```bash
+# Android
+cd android && ./gradlew clean
+cd .. && npx react-native run-android
+
+# iOS
+cd ios && pod install
+cd .. && npx react-native run-ios
+```
+
+### 3. Check Console Logs
+```tsx
+// Add navigation debugging
+<NavigationContainer
+  onStateChange={(state) => {
+    console.log('Navigation State:', state);
+  }}
+>
+  <YourNavigator />
+</NavigationContainer>
+```
+
+## Platform-Specific Issues
+
+### Android Issues
+- **Gesture Handler**: Ensure proper setup in MainActivity.kt
+- **Back Button**: Handle back button press properly
+- **Permissions**: Check for required permissions
+
+### iOS Issues
+- **Safe Area**: Use SafeAreaView for proper layout
+- **Status Bar**: Configure status bar appearance
+- **Simulator**: Test on both simulator and device
+
+## Key Rules for Troubleshooting
+- Always check NavigationContainer setup first
+- Verify all dependencies are properly installed
+- Use proper TypeScript typing for navigation
+- Test on both platforms (iOS and Android)
+- Check console logs for navigation errors
+- Clean and rebuild when making dependency changes
+- Use navigation debugging tools when available

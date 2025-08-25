@@ -1,0 +1,190 @@
+---
+description: Ensures Cursor.ai completes all tasks fully and doesn't leave implementations incomplete
+rule_type: [TASK_COMPLETION, QUALITY_ASSURANCE, DEVELOPMENT_STANDARDS]
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+alwaysApply: true
+---
+
+# Task Completion Enforcement Rule
+
+## Core Principle
+**NEVER leave a task incomplete. When you start implementing something, you MUST complete it fully and ensure it's functional.**
+
+## Completion Requirements
+
+### 1. Functional Completeness
+- **If you create a component**: Ensure it renders, has proper props, handles all states (loading, error, success)
+- **If you create a screen**: Ensure it navigates properly, handles data, and integrates with the app flow
+- **If you create an API service**: Ensure it makes actual API calls, handles responses, and manages errors
+- **If you create a context**: Ensure it provides state, has proper types, and integrates with the app
+
+### 2. Integration Completeness
+- **If you create a component**: Ensure it's properly imported and used somewhere
+- **If you create a screen**: Ensure it's added to navigation and accessible
+- **If you create a service**: Ensure it's integrated with hooks or components
+- **If you create a type**: Ensure it's used in the relevant components/services
+
+### 3. Error Handling Completeness
+- **Always implement error boundaries** for screens and major components
+- **Always handle API errors** with proper user feedback
+- **Always validate inputs** and show validation errors
+- **Always handle edge cases** (empty states, loading states, network failures)
+
+### 4. Testing Completeness
+- **If you create functionality**: Ensure it can be tested manually
+- **If you create components**: Ensure they render without errors
+- **If you create navigation**: Ensure all routes are accessible
+- **If you create forms**: Ensure they submit and validate properly
+
+## Implementation Checklist
+
+### Before Marking Task Complete:
+- [ ] Component renders without errors
+- [ ] All props are properly typed and validated
+- [ ] Error states are handled
+- [ ] Loading states are implemented
+- [ ] Component integrates with parent/child components
+- [ ] Navigation works (if applicable)
+- [ ] Data flows correctly (if applicable)
+- [ ] User interactions work as expected
+- [ ] Edge cases are handled
+- [ ] Code follows project standards
+
+### For API/Services:
+- [ ] Service makes actual API calls
+- [ ] Responses are properly handled
+- [ ] Errors are caught and handled
+- [ ] Loading states are managed
+- [ ] Service is integrated with components/hooks
+- [ ] Data flows through the app correctly
+
+### For Navigation:
+- [ ] All routes are accessible
+- [ ] Navigation parameters are properly typed
+- [ ] Screen transitions work
+- [ ] Deep linking works (if configured)
+- [ ] Authentication flow works
+- [ ] Back navigation works
+
+## Completion Validation
+
+### Self-Check Questions:
+1. **Can this be used immediately?** - The implementation should be ready to use
+2. **Does it handle errors?** - All error scenarios should be covered
+3. **Does it integrate properly?** - Should work with existing code
+4. **Can it be tested?** - Should be testable and functional
+5. **Does it follow standards?** - Should match project conventions
+
+### If Any Answer is "No":
+- **DO NOT** mark the task as complete
+- **Continue implementing** until all answers are "Yes"
+- **Test the implementation** to ensure it works
+- **Integrate it properly** with the rest of the app
+
+## Examples of Incomplete vs Complete
+
+### ❌ Incomplete Component:
+```tsx
+// Missing error handling, loading states, and proper integration
+const PetCard = ({ pet }) => {
+  return <View><Text>{pet.name}</Text></View>
+}
+```
+
+### ✅ Complete Component:
+```tsx
+// Full implementation with all states and error handling
+const PetCard = ({ pet, onPress, isLoading, error }: PetCardProps) => {
+  if (isLoading) return <LoadingSpinner />
+  if (error) return <ErrorMessage error={error} />
+  if (!pet) return <EmptyState />
+  
+  return (
+    <TouchableOpacity onPress={onPress} style={styles.card}>
+      <Text style={styles.name}>{pet.name}</Text>
+      <Text style={styles.status}>{pet.status}</Text>
+    </TouchableOpacity>
+  )
+}
+```
+
+### ❌ Incomplete API Service:
+```tsx
+// Missing error handling and proper integration
+const getPets = async () => {
+  const response = await api.get('/pets')
+  return response.data
+}
+```
+
+### ✅ Complete API Service:
+```tsx
+// Full implementation with error handling and proper types
+const getPets = async (): Promise<Pet[]> => {
+  try {
+    const response = await api.get<Pet[]>('/pets')
+    return response.data
+  } catch (error) {
+    throw new ApiError('Failed to fetch pets', error)
+  }
+}
+```
+
+## Enforcement Actions
+
+### When Starting a Task:
+1. **Analyze requirements** completely before starting
+2. **Plan the full implementation** including error handling
+3. **Consider integration points** with existing code
+4. **Identify all edge cases** that need handling
+
+### During Implementation:
+1. **Implement core functionality** first
+2. **Add error handling** immediately after
+3. **Add loading states** for async operations
+4. **Test integration** with existing components
+5. **Validate against requirements** continuously
+
+### Before Completion:
+1. **Test the implementation** manually
+2. **Verify all requirements** are met
+3. **Check integration** with existing code
+4. **Ensure error handling** works
+5. **Validate user experience** is smooth
+
+## Quality Gates
+
+### Must Pass Before Completion:
+- ✅ **Compiles without errors**
+- ✅ **Renders without crashes**
+- ✅ **Handles all expected states**
+- ✅ **Integrates with existing code**
+- ✅ **Follows project conventions**
+- ✅ **Includes proper error handling**
+- ✅ **Has proper TypeScript types**
+- ✅ **Can be tested manually**
+
+### If Any Gate Fails:
+- **Fix the issue immediately**
+- **Do not proceed until resolved**
+- **Test the fix thoroughly**
+- **Re-validate all gates**
+
+## Communication Standards
+
+### When Task is Complete:
+- **State clearly** that the task is complete
+- **List what was implemented** specifically
+- **Mention any assumptions** made
+- **Note any limitations** or future improvements needed
+
+### When Task Needs More Work:
+- **Be honest** about what's missing
+- **Continue working** until complete
+- **Don't pretend** it's done when it's not
+
+This rule ensures that Cursor.ai takes responsibility for complete implementations and doesn't leave you with broken or incomplete code.

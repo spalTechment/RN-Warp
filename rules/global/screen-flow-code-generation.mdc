@@ -1,0 +1,68 @@
+---
+description: Enforces automatic code generation for screen navigation flows based on config.screenFlow. Ensures navigation handlers, authentication checks, loading states, and required imports are generated for every screen as defined in the flow configuration.
+rule_type: [CODE_GENERATION, CONFIG_DRIVEN, NAVIGATION_LOGIC, FLOW_CONTROL]
+globs:
+  - "**/screens/**/*"
+  - "**/*.tsx"
+  - "**/*.ts"
+alwaysApply: false
+---
+
+# Screen Flow Code Generation Rules
+
+## Automatic Navigation Handler Generation
+- For each screen defined in `config.screenFlow.transitions`, automatically generate:
+  - Navigation handler functions (e.g., `handleGoToPetDetails`, `handleLogin`)
+  - Button/link onPress handlers that call the navigation functions
+  - Authentication checks where required
+  - Loading states for timed transitions (like Splash screen)
+
+## Screen Flow Enforcement
+- Every screen MUST implement all navigation actions defined for it in the flow `config`
+- Navigation handlers MUST use the exact screen names and parameters defined in the `config`
+- Authentication checks MUST be implemented exactly as specified in the flow logic
+- Error boundaries MUST be added for navigation failures
+
+## Automatic Import Generation
+- Required navigation imports MUST be automatically added to each screen
+- Authentication hooks/selectors MUST be imported where needed
+- Navigation types MUST be generated and imported based on the flow `config`
+
+## Do's and Don'ts
+
+### ✅ DO's:
+- **Automatically generate** navigation handler functions
+- **Create onPress handlers** for all interactive elements
+- **Add authentication checks** where required
+- **Implement loading states** for timed transitions
+- **Generate required imports** automatically
+- **Add error boundaries** for navigation failures
+- **Use exact screen names** from configuration
+- **Implement proper error handling** for generated code
+- **Test generated navigation** thoroughly
+- **Validate generated code** against requirements
+- **Add proper TypeScript types** for generated handlers
+- **Ensure generated code** follows project standards
+
+### ❌ DON'Ts:
+- **Don't manually write** navigation handlers when they can be generated
+- **Don't skip** authentication checks in generated code
+- **Don't forget** to import required dependencies
+- **Don't ignore** error handling in generated code
+- **Don't create** incomplete navigation handlers
+- **Don't skip** testing of generated code
+- **Don't ignore** TypeScript types in generated code
+- **Don't forget** to validate generated code
+- **Don't create** navigation handlers that don't work
+- **Don't skip** error boundary implementation
+
+This ensures consistent and reliable code generation for all screen navigation flows.
+- Every screen MUST implement all navigation actions defined for it in the flow `config`
+- Navigation handlers MUST use the exact screen names and parameters defined in the `config`
+- Authentication checks MUST be implemented exactly as specified in the flow logic
+- Error boundaries MUST be added for navigation failures
+
+## Automatic Import Generation
+- Required navigation imports MUST be automatically added to each screen
+- Authentication hooks/selectors MUST be imported where needed
+- Navigation types MUST be generated and imported based on the flow `config`

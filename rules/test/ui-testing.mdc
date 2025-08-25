@@ -1,0 +1,380 @@
+# UI Testing Rule for React Native
+
+## Overview
+This rule defines comprehensive UI testing standards for React Native components and screens. It covers component rendering, user interactions, accessibility, visual testing, and responsive design validation.
+
+## Test Categories
+
+### 1. Component Rendering Tests
+- **Default State Rendering**: Verify component renders correctly with default props
+- **Props-Based Rendering**: Test rendering with different prop combinations
+- **Conditional Rendering**: Test conditional UI elements (loading states, error states, empty states)
+- **Children Rendering**: Test component children rendering and composition
+- **Style Rendering**: Verify styles are applied correctly
+
+### 2. User Interaction Tests
+- **Touch Events**: Test onPress, onLongPress, onPressIn, onPressOut
+- **Text Input**: Test onChangeText, onFocus, onBlur, onSubmitEditing
+- **Scroll Events**: Test onScroll, onScrollBeginDrag, onScrollEndDrag
+- **Gesture Handling**: Test swipe, pinch, pan gestures
+- **Form Interactions**: Test form submission, validation, and reset
+
+### 3. Accessibility Tests
+- **Screen Reader Support**: Test accessibilityLabel, accessibilityHint
+- **Focus Management**: Test accessibilityFocus, accessibilityElementsHidden
+- **Semantic Structure**: Test accessibilityRole, accessibilityState
+- **Color Contrast**: Verify accessibility standards for color usage
+- **Keyboard Navigation**: Test tab order and keyboard accessibility
+
+### 4. Visual Testing
+- **Layout Verification**: Test component positioning and dimensions
+- **Style Application**: Verify colors, fonts, spacing, and borders
+- **Responsive Design**: Test different screen sizes and orientations
+- **Theme Integration**: Test light/dark mode and theme switching
+- **Animation Testing**: Test component animations and transitions
+
+## Test Structure Requirements
+
+### Required Imports
+```typescript
+import React from 'react';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { act } from 'react-test-renderer';
+import { AccessibilityInfo } from 'react-native';
+```
+
+### Required Test Setup
+```typescript
+describe('ComponentName - UI Testing', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Mock platform-specific APIs if needed
+    jest.spyOn(AccessibilityInfo, 'announce').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+});
+```
+
+### Required Test Categories
+1. **Rendering Tests** (30% of test cases)
+2. **User Interaction Tests** (40% of test cases)
+3. **Accessibility Tests** (20% of test cases)
+4. **Visual Tests** (10% of test cases)
+
+## Test Patterns
+
+### Component Rendering Pattern
+```typescript
+describe('Rendering', () => {
+  it('should render component with default props', () => {
+    const { getByTestId, getByText } = render(<Component />);
+    
+    expect(getByTestId('component-container')).toBeTruthy();
+    expect(getByText('Default Text')).toBeTruthy();
+  });
+
+  it('should render with custom props', () => {
+    const customProps = { title: 'Custom Title', disabled: true };
+    const { getByText, getByTestId } = render(<Component {...customProps} />);
+    
+    expect(getByText('Custom Title')).toBeTruthy();
+    expect(getByTestId('component-container')).toHaveStyle({ opacity: 0.5 });
+  });
+
+  it('should render loading state', () => {
+    const { getByTestId } = render(<Component isLoading={true} />);
+    
+    expect(getByTestId('loading-spinner')).toBeTruthy();
+    expect(getByTestId('content-container')).not.toBeTruthy();
+  });
+});
+```
+
+### User Interaction Pattern
+```typescript
+describe('User Interactions', () => {
+  it('should handle button press', () => {
+    const onPress = jest.fn();
+    const { getByTestId } = render(<Component onPress={onPress} />);
+    
+    fireEvent.press(getByTestId('action-button'));
+    
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('should handle text input changes', () => {
+    const onChangeText = jest.fn();
+    const { getByTestId } = render(<Component onChangeText={onChangeText} />);
+    
+    const input = getByTestId('text-input');
+    fireEvent.changeText(input, 'New Text');
+    
+    expect(onChangeText).toHaveBeenCalledWith('New Text');
+    expect(input.props.value).toBe('New Text');
+  });
+
+  it('should handle form submission', async () => {
+    const onSubmit = jest.fn();
+    const { getByTestId } = render(<Component onSubmit={onSubmit} />);
+    
+    fireEvent.press(getByTestId('submit-button'));
+    
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+    });
+  });
+});
+```
+
+### Accessibility Pattern
+```typescript
+describe('Accessibility', () => {
+  it('should have proper accessibility labels', () => {
+    const { getByLabelText } = render(<Component />);
+    
+    expect(getByLabelText('Submit form')).toBeTruthy();
+    expect(getByLabelText('Enter your name')).toBeTruthy();
+  });
+
+  it('should announce screen reader messages', () => {
+    const { getByTestId } = render(<Component />);
+    
+    fireEvent.press(getByTestId('announce-button'));
+    
+    expect(AccessibilityInfo.announce).toHaveBeenCalledWith('Action completed');
+  });
+
+  it('should handle focus management', () => {
+    const { getByTestId } = render(<Component />);
+    
+    const input = getByTestId('text-input');
+    fireEvent(input, 'focus');
+    
+    expect(input.props.accessibilityState).toEqual({ focused: true });
+  });
+});
+```
+
+### Visual Testing Pattern
+```typescript
+describe('Visual Testing', () => {
+  it('should apply correct styles', () => {
+    const { getByTestId } = render(<Component />);
+    
+    const container = getByTestId('component-container');
+    expect(container).toHaveStyle({
+      backgroundColor: '#ffffff',
+      padding: 16,
+      borderRadius: 8,
+    });
+  });
+
+  it('should handle theme changes', () => {
+    const { getByTestId, rerender } = render(<Component theme="light" />);
+    
+    let container = getByTestId('component-container');
+    expect(container).toHaveStyle({ backgroundColor: '#ffffff' });
+    
+    rerender(<Component theme="dark" />);
+    container = getByTestId('component-container');
+    expect(container).toHaveStyle({ backgroundColor: '#000000' });
+  });
+});
+```
+
+## Component-Specific Patterns
+
+### Form Component Pattern
+```typescript
+describe('Form Component UI', () => {
+  it('should render all form fields', () => {
+    const { getByTestId } = render(<FormComponent />);
+    
+    expect(getByTestId('name-input')).toBeTruthy();
+    expect(getByTestId('email-input')).toBeTruthy();
+    expect(getByTestId('submit-button')).toBeTruthy();
+  });
+
+  it('should show validation errors', async () => {
+    const { getByTestId, getByText } = render(<FormComponent />);
+    
+    const submitButton = getByTestId('submit-button');
+    fireEvent.press(submitButton);
+    
+    await waitFor(() => {
+      expect(getByText('Name is required')).toBeTruthy();
+      expect(getByText('Email is required')).toBeTruthy();
+    });
+  });
+
+  it('should clear form on reset', () => {
+    const { getByTestId } = render(<FormComponent />);
+    
+    const nameInput = getByTestId('name-input');
+    const resetButton = getByTestId('reset-button');
+    
+    fireEvent.changeText(nameInput, 'Test Name');
+    fireEvent.press(resetButton);
+    
+    expect(nameInput.props.value).toBe('');
+  });
+});
+```
+
+### List Component Pattern
+```typescript
+describe('List Component UI', () => {
+  it('should render list items', () => {
+    const items = [{ id: 1, title: 'Item 1' }, { id: 2, title: 'Item 2' }];
+    const { getByText } = render(<ListComponent items={items} />);
+    
+    expect(getByText('Item 1')).toBeTruthy();
+    expect(getByText('Item 2')).toBeTruthy();
+  });
+
+  it('should handle item selection', () => {
+    const onItemPress = jest.fn();
+    const items = [{ id: 1, title: 'Item 1' }];
+    const { getByTestId } = render(<ListComponent items={items} onItemPress={onItemPress} />);
+    
+    fireEvent.press(getByTestId('item-1'));
+    
+    expect(onItemPress).toHaveBeenCalledWith(items[0]);
+  });
+
+  it('should show empty state', () => {
+    const { getByTestId, getByText } = render(<ListComponent items={[]} />);
+    
+    expect(getByTestId('empty-state')).toBeTruthy();
+    expect(getByText('No items found')).toBeTruthy();
+  });
+});
+```
+
+### Modal Component Pattern
+```typescript
+describe('Modal Component UI', () => {
+  it('should render modal when visible', () => {
+    const { getByTestId } = render(<ModalComponent visible={true} />);
+    
+    expect(getByTestId('modal-overlay')).toBeTruthy();
+    expect(getByTestId('modal-content')).toBeTruthy();
+  });
+
+  it('should hide modal when not visible', () => {
+    const { queryByTestId } = render(<ModalComponent visible={false} />);
+    
+    expect(queryByTestId('modal-overlay')).toBeNull();
+    expect(queryByTestId('modal-content')).toBeNull();
+  });
+
+  it('should close modal on backdrop press', () => {
+    const onClose = jest.fn();
+    const { getByTestId } = render(<ModalComponent visible={true} onClose={onClose} />);
+    
+    fireEvent.press(getByTestId('modal-overlay'));
+    
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+```
+
+## Quality Standards
+
+### Coverage Requirements
+- **Minimum 90% line coverage** for UI-related code
+- **100% coverage** for user interaction handlers
+- **100% coverage** for accessibility properties
+- **100% coverage** for conditional rendering logic
+
+### Performance Requirements
+- **Render time < 50ms** for simple components
+- **Render time < 100ms** for complex components
+- **Interaction response time < 16ms** for smooth 60fps
+
+### Accessibility Requirements
+- **All interactive elements** must have accessibility labels
+- **All form inputs** must have proper accessibility hints
+- **All images** must have alt text or be marked as decorative
+- **Color contrast** must meet WCAG AA standards
+
+## Test Utilities
+
+### Custom Render Function
+```typescript
+const customRender = (ui: React.ReactElement, options = {}) => {
+  const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
+    return (
+      <ThemeProvider theme={defaultTheme}>
+        <AccessibilityProvider>
+          {children}
+        </AccessibilityProvider>
+      </ThemeProvider>
+    );
+  };
+
+  return render(ui, { wrapper: AllTheProviders, ...options });
+};
+```
+
+### Accessibility Testing Utilities
+```typescript
+const checkAccessibility = (component: React.ReactElement) => {
+  const { container } = render(component);
+  
+  // Check for accessibility violations
+  const violations = axe(container);
+  expect(violations).toHaveLength(0);
+};
+
+const testScreenReader = (component: React.ReactElement) => {
+  const { getByLabelText } = render(component);
+  
+  // Test screen reader navigation
+  const elements = getByLabelText(/.*/);
+  expect(elements.length).toBeGreaterThan(0);
+};
+```
+
+## Best Practices
+
+### DO's
+- **Test all user interaction paths** including edge cases
+- **Verify accessibility compliance** for all interactive elements
+- **Test responsive design** across different screen sizes
+- **Validate visual consistency** with design system
+- **Test loading and error states** thoroughly
+- **Use semantic test IDs** for better test maintenance
+
+### DON'Ts
+- **Don't test implementation details** that don't affect UI
+- **Don't skip accessibility testing** for any component
+- **Don't rely on visual inspection** alone for style testing
+- **Don't ignore performance** in UI tests
+- **Don't test third-party library behavior** directly
+
+## Integration with Other Rules
+
+### With Unit Testing Rule
+- UI tests focus on user interactions and rendering
+- Unit tests focus on business logic and state management
+- Both rules can be applied to the same component
+
+### With API Testing Rule
+- UI tests verify API integration from user perspective
+- API tests verify service layer independently
+- UI tests mock API responses for isolated testing
+
+### With Database Testing Rule
+- UI tests verify database integration from user perspective
+- Database tests verify data layer independently
+- UI tests mock database operations for isolated testing
+
+This rule ensures comprehensive UI testing that works with any React Native project and can be used independently or in combination with other testing rules.
+description:
+globs:
+alwaysApply: false
+---

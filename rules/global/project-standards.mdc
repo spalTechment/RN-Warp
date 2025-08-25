@@ -1,0 +1,158 @@
+---
+description: Project-wide standards for structure, configuration, and architectural decisions. Ensures all code and files adhere to the project’s config-driven architecture and organizational rules.
+rule_type: [PROJECT_STANDARDS, CONFIG_DRIVEN, ARCHITECTURE_ENFORCEMENT]
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# React Native Project Structure Rules – Config-Driven Architecture
+
+## Rule Application
+These rules apply to all React Native projects using a configuration in `config/*.json`. The file structure, API endpoints, navigation, and architecture must always be determined by the active project configuration.
+
+## Directory Organization Principles
+
+### Core Structure Elements
+- **API Layer**: `config.fileStructure.api`
+- **Components**: `config.fileStructure.components`
+- **Screens**: `config.fileStructure.screens`
+- **Navigation**: `config.fileStructure.navigation`
+- **Services**: `config.fileStructure.services`
+- **Types**: `config.fileStructure.types` (for app/global types)
+- **Models**: `config.fileStructure.models` (for resource/domain models)
+- **Constants**: `config.fileStructure.constants`
+- **Hooks**: `config.fileStructure.hooks`
+- **Context**: `config.fileStructure.context`
+- **Utils**: `config.fileStructure.utils`
+- **Theme**: `config.fileStructure.theme`
+
+### Subdirectory Structure Guidelines
+- **API**: Organize `clients/`, `endpoints/`, `hooks/`, `services/`, `models/`, and `utils/` by resource (e.g., `PetEndpoints.ts`, `PetHooks.ts`, `PetService.ts`, `Pet.ts`).
+- **Components**: Organize by feature or UI category.
+- **Screens**: **Group by feature or navigation stack** (e.g., `screens/auth/LoginScreen.tsx`, `screens/pets/PetsScreen.tsx`).
+- **Services**: Organize by business domain or integration.
+
+### File Naming Conventions
+- **Components/Screens**: PascalCase (e.g., `UserProfile.tsx`, `HomeScreen.tsx`)
+- **Services/Utilities**: camelCase (e.g., `userService.ts`, `formatDate.ts`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `API_CONSTANTS.ts`)
+- **Types/Models**: PascalCase (e.g., `AppTypes.ts`, `Pet.ts`)
+- **Directories**: Follow config-specified naming
+
+### App Types and Navigation Param Lists
+- Place all app/global types (e.g., `AuthState`, `AppState`, navigation ParamList types) in a single file: `src/types/AppTypes.ts` or `src/models/App.ts`.
+- Navigation ParamList types must be in the same file as app/global types.
+- Resource/domain models (e.g., `Pet`, `Order`, `User`) must be in separate files in `src/api/models/` or `src/models/`, one per resource.
+- Do not mix resource models and app/global types in the same file.
+
+### Project Root Structure Example
+
+```
+/
+├── config/
+│   └── [project-name]-project-config.json
+├── assets/
+├── [config.fileStructure paths]   # Dynamic paths from configuration, as directories only
+│   └── [subdirectories, each with index.ts if applicable]
+├── __tests__/                     # Test directories (mirror structure, empty)
+└── node_modules/            # Dependencies
+```
+
+### Import Organization
+1. React and React Native imports
+2. Third-party library imports (per `config.architecture`)
+3. Internal imports (using configured file structure paths)
+4. Type/model imports (separate from value imports)
+
+### Screen Grouping Best Practices
+- **Group screens by feature or navigation stack** within the screens path.
+- Each feature folder contains all related screens.
+- Use PascalCase for screen file names.
+
+## Config-Driven Architecture Principles
+
+- **Adaptive Organization**: File structure adapts to `config.fileStructure` definitions
+- **Path Resolution**: All file paths resolve dynamically from configuration
+- **Conditional Directories**: Only create directories defined in config (non-empty paths)
+- **Domain Agnostic**: Structure works for any business domain
+
+### Design System Integration
+- Use all design tokens from `config.design`
+- Never hardcode colors, spacing, or typography
+
+### State Management & Data Fetching
+- Use libraries specified in `config.architecture`
+- Implement state, data fetching, and HTTP client per config
+
+### Environment Management
+- Support all environments in `config.environments`
+- Use environment-specific API URLs, debug settings, feature flags
+
+### Feature and Permission Management
+- Only implement features in `config.features.enabled`
+- Only request permissions in `config.features.permissions`
+
+## Configuration-Driven Development Rules
+
+- **All file paths must resolve from `config.fileStructure` definitions.**
+- **Screen, API, and model code generation must follow the configured structure and naming conventions.**
+- **Navigation and ParamList types must be defined in a single, dedicated types/models file.**
+
+### Testing Strategy
+- Mirror the configured file structure in tests
+- Test data models, API endpoints, and navigation flows as defined in config
+
+### Platform-Specific Implementation
+- Use `.ios.ts` and `.android.ts` extensions when needed
+- Keep platform differences minimal
+
+### Configuration Validation
+- Validate configuration structure on project setup
+- Ensure all required configuration sections are present
+
+### Error Handling
+- Implement error boundaries for all screen components
+- Apply environment-specific error handling and logging
+
+### Performance Guidelines
+- Optimize based on configured features
+- Use lazy loading and performance monitoring if enabled
+
+## Do's and Don'ts
+
+### ✅ DO's:
+- **Always use** paths from `config.fileStructure` definitions
+- **Create directories** only as defined in configuration
+- **Group screens by feature** or navigation stack
+- **Place app/global types** in single file (`src/types/AppTypes.ts`)
+- **Separate resource models** into individual files
+- **Use index.ts files** for barrel exports
+- **Mirror structure** in test directories
+- **Follow naming conventions** consistently
+- **Use configured directories** for their intended purposes
+- **Organize imports** in the correct order
+- **Validate configuration** on project setup
+- **Implement error boundaries** for all components
+
+### ❌ DON'Ts:
+- **Never create** directories not defined in config
+- **Don't mix** resource models with global types
+- **Don't scatter** related files across different directories
+- **Don't ignore** the configured file structure
+- **Don't create** flat file structures without organization
+- **Don't hardcode** file paths or structure
+- **Don't skip** configuration validation
+- **Don't ignore** naming conventions
+- **Don't create** untested or incomplete features
+- **Don't forget** to handle errors and edge cases
+
+This approach ensures flexibility, consistency, and maintainability for all config-driven React Native projects.
+
+
+- Use lazy loading and performance monitoring if enabled
+
+---
+
+This approach ensures flexibility, consistency, and maintainability for all config-driven React Native projects.
+

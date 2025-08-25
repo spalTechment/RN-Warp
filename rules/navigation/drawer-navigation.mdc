@@ -1,0 +1,136 @@
+# Drawer Navigation Setup
+
+## Use Case
+Apps requiring side menu navigation with multiple sections.
+
+## Configuration Structure
+```json
+{
+  "navigation": {
+    "type": "drawer",
+    "screens": ["Home", "Profile", "Settings"],
+    "initialScreen": "Home",
+    "drawerStyle": {
+      "width": 240,
+      "backgroundColor": "#fff"
+    },
+    "headerShown": true
+  },
+  "dependencies": {
+    "required": [
+      "@react-navigation/native",
+      "@react-navigation/drawer",
+      "react-native-gesture-handler",
+      "react-native-reanimated"
+    ]
+  }
+}
+```
+
+## Required Dependencies
+```bash
+npm install @react-navigation/native @react-navigation/drawer react-native-gesture-handler react-native-reanimated
+```
+
+## File Structure
+```
+src/
+├── navigation/
+│   ├── types.ts
+│   └── DrawerNavigator.tsx
+├── screens/
+│   ├── HomeScreen.tsx
+│   ├── ProfileScreen.tsx
+│   └── SettingsScreen.tsx
+└── App.tsx
+```
+
+## Implementation Steps
+
+### 1. Navigation Types
+Create `src/navigation/types.ts` with:
+- `DrawerParamList` (Home, Profile, Settings)
+
+### 2. Drawer Navigator
+Create `src/navigation/DrawerNavigator.tsx` with:
+- Drawer navigator configuration
+- Screen registration
+- Drawer styling options
+
+### 3. Screen Components
+Create placeholder screens in `src/screens/`:
+- `HomeScreen.tsx`
+- `ProfileScreen.tsx`
+- `SettingsScreen.tsx`
+
+### 4. App.tsx
+Configure with:
+- NavigationContainer
+- Gesture handler import
+- DrawerNavigator integration
+
+## Screen Template
+```tsx
+// Template for all screens
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { DrawerScreenProps } from '@react-navigation/drawer';
+import { DrawerParamList } from '../navigation/types';
+
+type Props = DrawerScreenProps<DrawerParamList, '[ScreenName]'>;
+
+const [ScreenName]Screen: React.FC<Props> = ({ navigation, route }) => {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>[ScreenName] Screen</Text>
+      <Text style={styles.subtitle}>Add your UI here</Text>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+  },
+});
+
+export default [ScreenName]Screen;
+```
+
+## Platform Setup
+
+### Android
+Add to `android/app/build.gradle`:
+```gradle
+dependencies {
+    implementation 'com.facebook.react:react-native-gesture-handler:2.x.x'
+}
+```
+
+### iOS
+Add to `ios/Podfile`:
+```ruby
+pod 'RNGestureHandler', :path => '../node_modules/react-native-gesture-handler'
+```
+
+## Key Rules
+- Import 'react-native-gesture-handler' first in App.tsx
+- Use proper drawer screen props typing
+- Handle drawer opening with navigation.openDrawer()
+- Configure drawer style for better UX
+- Test drawer gestures on both platforms
+- Keep screen components simple with placeholder UI
+- Use TypeScript for all navigation types
+- Follow the file structure exactly as defined
