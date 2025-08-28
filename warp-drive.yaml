@@ -1,0 +1,61 @@
+name: Git: Commit if Coverage ≥ 50%
+parameters:
+  branch:
+    description: "Branch to commit/push"
+    default: "main"
+  commit_message:
+    description: "Git commit message"
+  dry_run:
+    description: "Set true to test commands without committing"
+
+steps:
+  - name: Dry-Run Test & Coverage Commands
+    run: |
+      if [[ "${{ warp.parameters.dry_run }}" == "true" ]]; then
+        echo "=== DRY RUN: Git Coverage Check ==="
+        echo "Would run:"
+        echo "  npm run test -- --coverage"
+        echo "  Check coverage/coverage-summary.json"
+        echo "  Commit & push to branch: ${{ warp.parameters.branch }}"
+      fi
+
+  - name: Run Unit Tests with Coverage
+    if: ${{ warp.parameters.dry_run != "true" }}
+    run: |
+      echo "Running unit tests with coverage..."
+      npm run test -- --coverage
+
+  - name: Validate 50%+ Coverage
+    if: ${{ warp.parameters.dry_run != "true" }}
+    run: |
+      echo "Checking test coverage..."
+
+      if [ ! -f coverage/coverage-summary.json ]; then
+        echo "❌ Coverage file not found. Tests may have failed."
+        exit 1
+      fi
+
+      TOTAL=$(node -pe "require('./coverage/coverage-summary.json').total.lines.pct")
+      echo "✅ Total line coverage: $TOTAL%"
+
+      if (( $(echo "$TOTAL < 50" | bc -l) )); then
+        echo "❌ Coverage is below 50%. Aborting commit."
+        exit 1
+      else
+        echo "✅ Coverage is ≥ 50%. Proceeding to commit."
+      fi
+
+  - name: Pull latest changes
+    if: ${{ warp.parameters.dry_run != "true" }}
+    run: |
+      git fetch origin
+      git checkout ${{ warp.parameters.branch }}
+      git pull origin ${{ warp.parameters.branch }}
+
+  - name: Commit & Push (only if above passed)
+    if: ${{ warp.parameters.dry_run != "true" }}
+    run: |
+      git add .
+      git commit -m "${{ warp.parameters.commit_message }}"
+      git push origin ${{ warp.parameters.branch }}
+
