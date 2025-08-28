@@ -10,6 +10,7 @@ import { StatusBar } from 'react-native';
 import { AppProviders } from './src/context';
 import { ErrorBoundary } from './src/components';
 import { AppNavigator } from './src/navigation';
+import './src/utils/coverageProbe';
 
 function App() {
   return (
