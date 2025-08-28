@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'react-native',
   collectCoverage: true,
-  coverageReporters: ['text', 'lcov'],
+  coverageReporters: ['text', 'lcov', 'json-summary'],
   setupFiles: ['<rootDir>/jest.setup.js'],
   moduleNameMapper: {
     '^.+/screens/LoginScreen$': '<rootDir>/__mocks__/DummyComponent.tsx',
